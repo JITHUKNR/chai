@@ -56,6 +56,10 @@ ELEVEN_API_KEY = "sk_2b615fe071528fb5696ff8a1d407ab367611caa5543482bd"
 KIE_API_TOKEN = os.environ.get('KIE_API_TOKEN', "9fd5e7779094f8ca2d8da1da95e79443")
 UPI_ID = "Abhiixz@ybl"
 
+# ☁️ STREAMTAPE API SETTINGS
+STREAMTAPE_LOGIN = "114643751a8a4a5a0e77"
+STREAMTAPE_KEY = "39P20mKOV7HAY7"
+
 # 👇 AI STUDIO PRICING
 PRICE = {
     "txt2vid": 30,
@@ -452,7 +456,6 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------------------------------------------------
 
 async def tool_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Clear any previous states
     context.user_data['state'] = None
     user_id = update.effective_user.id
     establish_db_connection()
@@ -487,14 +490,10 @@ async def check_balance_and_proceed(query, user_id, required_credits, tool_name,
     if credits < required_credits:
         await query.message.edit_text(f"❌ **Insufficient Credits!**\n\nYou need {required_credits} credits for {tool_name}.\nYour balance is {credits} credits.\n\nPlease recharge via UPI: `{UPI_ID}`", parse_mode='Markdown', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💰 Recharge Now", callback_data="check_wallet")]]))
         return False
-    # Set the state for step-by-step
     context.user_data['state'] = next_state
     await query.message.edit_text(prompt_text, parse_mode='Markdown')
     return True
 
-# ---------------------------------------------------------
-# 🎨 OLD IMAGINE COMMAND (Replaced by Step-by-Step, but kept for safety)
-# ---------------------------------------------------------
 async def imagine_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_query = " ".join(context.args)
     if not user_query: return await update.message.reply_text("What should I search for? (Example: `/imagine Jungkook cute`) 💜")
@@ -644,26 +643,24 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("Users 👥", callback_data='admin_users'), InlineKeyboardButton("New Photo 📸", callback_data='admin_new_photo')],
         [InlineKeyboardButton("Broadcast 📣", callback_data='admin_broadcast_text'), InlineKeyboardButton("Test Wish ☀️", callback_data='admin_test_wish')],
         [InlineKeyboardButton("Clean Media 🧹", callback_data='admin_clearmedia'), InlineKeyboardButton("Delete Old 🗑️", callback_data='admin_delete_old')],
-        [InlineKeyboardButton("How to use File ID? 🆔", callback_data='admin_help_id')]
+        [InlineKeyboardButton("Upload Streamtape ☁️", callback_data='admin_streamtape'), InlineKeyboardButton("Help ID 🆔", callback_data='admin_help_id')]
     ]
     await update.message.reply_text("👑 **Super Admin Panel:**\nSelect an option below:", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
 # ------------------------------------------------------------------
-# MAIN BUTTON HANDLER (Integrated with Step-by-Step Logic)
+# MAIN BUTTON HANDLER
 # ------------------------------------------------------------------
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     data = query.data
 
-    # UI Routing
     if data == "open_tools": 
         context.user_data['state'] = None
-        await tool_main_menu(update, context)
+        await tool_menu_command(update, context)
         return
     if data.startswith("cat_"): return await sub_menu_handler(update, context)
     
-    # Wallet
     if data == "check_wallet":
         establish_db_connection()
         user_doc = db_collection_users.find_one({'user_id': user_id})
@@ -672,7 +669,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="open_tools")]]), parse_mode='Markdown')
         return
 
-    # STEP-BY-STEP TOOL CLICKS
     if data == "tool_txt2vid":
         await check_balance_and_proceed(query, user_id, PRICE['txt2vid'], "Text to Video", "WAITING_FOR_TXT2VID_PROMPT", "📝 **Text to Video**\n\nPlease type the description (prompt) of the video you want to generate. 🎬", context)
         return
@@ -689,7 +685,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await check_balance_and_proceed(query, user_id, PRICE['imagine'], "Imagine", "WAITING_FOR_IMAGINE_PROMPT", "✨ **AI Imagine**\n\nPlease type the description of the image you want to create! 🎨", context)
         return
 
-    # Old Callbacks
     if data == "settings_menu": return await settings_command(update, context)
     if data == "toggle_nsfw": return await toggle_nsfw_handler(update, context)
     if data == "close_settings" or data == "close_menu": return await query.message.delete()
@@ -710,6 +705,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == 'admin_new_photo': await send_new_photo(update, context)
     elif data == 'admin_clearmedia': await clear_deleted_media(update, context)
     elif data == 'admin_delete_old': await delete_old_media(update, context)
+    elif data == 'admin_streamtape': await context.bot.send_message(query.from_user.id, "☁️ **To Upload:** Reply to any video/document with `/streamtape`")
     elif data == 'admin_broadcast_text': await context.bot.send_message(query.from_user.id, "📢 To Broadcast: Type `/broadcast Your Message`")
     elif data == 'admin_test_wish': await send_morning_wish(context)
     elif data == 'admin_help_id': await context.bot.send_message(query.from_user.id, "🆔 Send any file to get File ID.")
@@ -789,6 +785,50 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
         except: pass
 
 # ------------------------------------------------------------------
+# 🌟 STREAMTAPE UPLOAD COMMAND
+# ------------------------------------------------------------------
+async def upload_to_streamtape(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
+    reply = update.message.reply_to_message
+    if not reply or not (reply.video or reply.document):
+        return await update.message.reply_text("⚠️ **How to use:**\nReply to any video or document with `/streamtape`")
+    
+    status_msg = await update.message.reply_text("📥 **Downloading File to Server...**\n*(Note: Telegram bot API limits downloads to 20MB. If it fails, use the separate Pyrogram bot for large movies!)*", parse_mode='Markdown')
+    
+    try:
+        file_id = reply.video.file_id if reply.video else reply.document.file_id
+        new_file = await context.bot.get_file(file_id) 
+        file_path = f"streamtape_temp_{update.message.message_id}.mp4"
+        await new_file.download_to_drive(file_path)
+        
+        await status_msg.edit_text("☁️ **Uploading to Streamtape...**\nThis might take a few moments.")
+        req_url = f"https://api.streamtape.com/file/ul?login={STREAMTAPE_LOGIN}&key={STREAMTAPE_KEY}"
+        response = requests.get(req_url).json()
+        
+        if response.get("status") == 200:
+            upload_url = response["result"]["url"]
+            with open(file_path, 'rb') as f:
+                upload_response = requests.post(upload_url, files={'file1': f}).json()
+            
+            if upload_response.get("status") == 200:
+                video_link = upload_response["result"]["url"]
+                await status_msg.edit_text(f"✅ **Upload Complete!** 🚀\n\nCopy this link for your **TRENDA STREAM** website:\n\n`{video_link}`", parse_mode='Markdown')
+            else:
+                await status_msg.edit_text("❌ Upload failed at Streamtape server.")
+        else:
+            await status_msg.edit_text("❌ Streamtape API Error. Check Login/Key.")
+            
+        if os.path.exists(file_path): os.remove(file_path)
+        
+    except Exception as e:
+        err_msg = str(e)
+        if "File is too big" in err_msg:
+            err_msg = "File is larger than 20MB! Please use the Pyrogram Uploader Bot for full movies."
+        await status_msg.edit_text(f"❌ **Error:** {err_msg}", parse_mode='Markdown')
+        if 'file_path' in locals() and os.path.exists(file_path): os.remove(file_path)
+
+
+# ------------------------------------------------------------------
 # 🌟 MASTER MESSAGE HANDLER (Chat, Step-by-Step, Feedback, Media)
 # ------------------------------------------------------------------
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -796,7 +836,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text 
     state = context.user_data.get('state')
 
-    # 1. Feedback Mode
     if context.user_data.get('waiting_for_feedback'):
         try:
             await context.bot.send_message(ADMIN_TELEGRAM_ID, text=f"📩 **FEEDBACK RECEIVED:**\n👤 From: {update.effective_user.first_name} (`{user_id}`)\n💬: {user_text}", parse_mode='Markdown')
@@ -805,12 +844,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['waiting_for_feedback'] = False 
         return
 
-    # 2. STEP-BY-STEP TOOL TEXT INPUTS
     if state == "WAITING_FOR_TXT2VID_PROMPT":
         await update.message.reply_text(f"🎬 Creating video for: '{user_text}'... (Consuming {PRICE['txt2vid']} credits)")
         db_collection_users.update_one({'user_id': user_id}, {'$inc': {'credits': -PRICE['txt2vid']}})
         context.user_data['state'] = None
-        # Here you will add the actual API call logic for Kie.ai Text to Video
         await asyncio.sleep(2)
         await update.message.reply_text("✅ Video request sent! (Placeholder for actual API integration)")
         return
@@ -827,12 +864,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"🎨 Generating image for: '{user_text}'... (Consuming {PRICE['imagine']} credits)")
         db_collection_users.update_one({'user_id': user_id}, {'$inc': {'credits': -PRICE['imagine']}})
         context.user_data['state'] = None
-        # Fallback quick generation using pollination
         image_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(user_text)}?nologo=true"
         await update.message.reply_photo(image_url, caption=f"✨ `{user_text}`")
         return
 
-    # 3. Normal Roleplay Logic
     if establish_db_connection(): db_collection_users.update_one({'user_id': user_id}, {'$set': {'last_seen': datetime.now(timezone.utc), 'notified_24h': False}}, upsert=True)
     if user_id in current_scenario and current_scenario[user_id] == "WAITING_FOR_PLOT":
         current_scenario[user_id] = user_text 
@@ -842,19 +877,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_user_message[user_id] = user_text 
     await generate_ai_response(update, context, user_text, is_regenerate=False)
 
-# 📸 MASTER MEDIA HANDLER (Screenshots, Tool Inputs, Voice, Vision)
+# 📸 MASTER MEDIA HANDLER
 async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     state = context.user_data.get('state')
 
-    # 1. Payment Screenshot Check (Only if NO state is active)
     if update.message.photo and user.id != ADMIN_TELEGRAM_ID and not state:
         await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
         await context.bot.send_message(ADMIN_TELEGRAM_ID, text=f"📩 **Payment Screenshot!**\n👤 User: {user.first_name}\n🆔 ID: `{user.id}`\nUse: `/add {user.id} [Amount]`", parse_mode='Markdown')
         await update.message.reply_text("📸 **Screenshot Received!** Admin will add your credits soon. 💜")
         return
 
-    # 2. STEP-BY-STEP IMAGE INPUTS
     if state == "WAITING_FOR_IMG2VID_IMAGE" and update.message.photo:
         context.user_data['img2vid_file'] = update.message.photo[-1].file_id
         context.user_data['state'] = "WAITING_FOR_IMG2VID_PROMPT"
@@ -883,7 +916,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text("✅ Upscale task created! (Placeholder)")
         return
 
-    # 3. Old Voice / Vision Forwarding Logic
     if user.id == ADMIN_TELEGRAM_ID: return
     try:
         await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
@@ -1064,13 +1096,14 @@ def main():
     application.add_handler(CommandHandler("allowmedia", allow_media))
     application.add_handler(CommandHandler("character", switch_character))
     application.add_handler(CommandHandler("switch", switch_character)) 
+    application.add_handler(CommandHandler("streamtape", upload_to_streamtape))
 
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & ~filters.COMMAND, get_media_id))
     application.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST & (filters.PHOTO), channel_message_handler))
     
     # 🌟 MASTER HANDLERS FOR CHAT, TOOL INPUTS, AND MEDIA 🌟
-    application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO, handle_incoming_media), group=1)
+    application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO | filters.Document.ALL, handle_incoming_media), group=1)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
 
     logger.info(f"Starting webhook on port {PORT}")
