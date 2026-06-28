@@ -54,7 +54,7 @@ ADMIN_CHANNEL_ID = os.environ.get('ADMIN_CHANNEL_ID', '-1002992093797')
 # 👇 1. API Keys & Settings
 ELEVEN_API_KEY = "sk_2b615fe071528fb5696ff8a1d407ab367611caa5543482bd"
 KIE_API_TOKEN = os.environ.get('KIE_API_TOKEN', "9fd5e7779094f8ca2d8da1da95e79443")
-UPI_ID = "Abhiixz@ybl"
+ UPI_ID = "Abhiixz@ybl"
 
 # 👇 AI STUDIO PRICING
 PRICE = {
@@ -326,7 +326,8 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
     try:
         chat_id = update.effective_chat.id
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}], model="llama-3.1-8b-instant")
+        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
+        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}], model="llama-3.3-70b-versatile")
         msg = completion.choices[0].message.content.strip()
         final_msg = add_emojis_balanced(msg)
         chat_history[user_id] = [{"role": "system", "content": system_prompt}, {"role": "assistant", "content": final_msg}]
@@ -354,22 +355,6 @@ async def start_game(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("🤔 Truth", callback_data='game_truth'), InlineKeyboardButton("🔥 Dare", callback_data='game_dare')]]
     msg_text = "**Truth or Dare?** 😏 Pick one, Baby!"
     await update.message.reply_text(msg_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
-async def game_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_id = query.from_user.id
-    choice = query.data
-    if user_id not in chat_history: chat_history[user_id] = []
-    if choice == 'game_truth':
-        question = random.choice(TRUTH_QUESTIONS)
-        text_to_send = f"**TRUTH:**\n{question}"
-        chat_history[user_id].append({"role": "assistant", "content": question})
-        await query.edit_message_text(text_to_send, parse_mode='Markdown')
-    elif choice == 'game_dare':
-        task = random.choice(DARE_CHALLENGES)
-        text_to_send = f"**DARE:**\n{task}"
-        chat_history[user_id].append({"role": "assistant", "content": task})
-        await query.edit_message_text(text_to_send, parse_mode='Markdown')
 
 async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message if update.message else update.callback_query.message
@@ -441,7 +426,8 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(f"✨ **{selected_activity}** with **{selected_char}**...\n\n(Creating moment... 💜)", parse_mode='Markdown')
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive."
-        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="llama-3.1-8b-instant")
+        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
+        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="llama-3.3-70b-versatile")
         reply_text = completion.choices[0].message.content.strip()
         final_reply = add_emojis_balanced(reply_text)
         await query.message.edit_text(final_reply, parse_mode='Markdown')
@@ -648,6 +634,17 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await update.message.reply_text("👑 **Super Admin Panel:**\nSelect an option below:", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
+# 🌟 ChatLog function to forward logs to Admin
+async def ChatLog(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text, bot_reply, char_name, nsfw_status):
+    user = update.effective_user
+    log_msg = f"👤 User: {user.first_name} ID: `{user.id}`\n🔥 NSFW: {nsfw_status}\n💬 Msg: {user_text}\n🤖 Bot: {bot_reply}\n🎭 Char: {char_name}"
+    try:
+        # Check if the user is the admin to avoid double logging
+        if user.id != ADMIN_TELEGRAM_ID:
+            await context.bot.send_message(ADMIN_TELEGRAM_ID, log_msg, parse_mode='Markdown')
+    except Exception as e:
+        logger.error(f"Error sending chat log to Admin: {e}")
+
 # ------------------------------------------------------------------
 # MAIN BUTTON HANDLER (Integrated with Step-by-Step Logic)
 # ------------------------------------------------------------------
@@ -783,7 +780,7 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
     for user in users:
         try:
             sys_prompt = BTS_PERSONAS.get(user.get('character', 'TaeKook'), BTS_PERSONAS["TaeKook"])
-            completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}], model="llama-3.1-8b-instant")
+            completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}], model="llama-3.3-70b-versatile")
             await context.bot.send_message(user['user_id'], completion.choices[0].message.content.strip(), parse_mode='Markdown')
             db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
         except: pass
@@ -849,9 +846,12 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
 
     # 1. Payment Screenshot Check (Only if NO state is active)
     if update.message.photo and user.id != ADMIN_TELEGRAM_ID and not state:
-        await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
-        await context.bot.send_message(ADMIN_TELEGRAM_ID, text=f"📩 **Payment Screenshot!**\n👤 User: {user.first_name}\n🆔 ID: `{user.id}`\nUse: `/add {user.id} [Amount]`", parse_mode='Markdown')
-        await update.message.reply_text("📸 **Screenshot Received!** Admin will add your credits soon. 💜")
+        try:
+            await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
+            await context.bot.send_message(ADMIN_TELEGRAM_ID, text=f"📩 **Payment Screenshot!**\n👤 User: {user.first_name}\n🆔 ID: `{user.id}`\nUse: `/add {user.id} [Amount]`", parse_mode='Markdown')
+            await update.message.reply_text("📸 **Screenshot Received!** Admin will add your credits soon. 💜")
+        except Exception as e:
+            logger.error(f"Error forwarding payment screenshot: {e}")
         return
 
     # 2. STEP-BY-STEP IMAGE INPUTS
@@ -886,7 +886,10 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
     # 3. Old Voice / Vision Forwarding Logic
     if user.id == ADMIN_TELEGRAM_ID: return
     try:
-        await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
+        # Forward incoming media to the admin
+        if user.id != ADMIN_TELEGRAM_ID:
+            await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
+
         system_instruction = ""
         if update.message.voice or update.message.audio:
             status_msg = await update.message.reply_text("🎧 Listening...")
@@ -903,14 +906,23 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
         elif update.message.photo:
             caption = update.message.caption if update.message.caption else ""
             system_instruction = f"[SYSTEM: The user sent a PHOTO. ROLEPLAY that you see it. User's caption: '{caption}']"
+        
+        # Additional Media handling
+        if update.message.video:
+             caption = update.message.caption if update.message.caption else ""
+             system_instruction = f"[SYSTEM: The user sent a VIDEO. ROLEPLAY that you see it. User's caption: '{caption}']"
+
         if system_instruction: await generate_ai_response(update, context, user_text=system_instruction)
-    except: pass
+    except Exception as e:
+        logger.error(f"Error forwarding incoming media: {e}")
 
 async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text, is_regenerate=False):
     user_id = update.effective_user.id 
     if not is_regenerate: await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
     system_prompt, selected_char, final_name = "", "TaeKook", "TaeKook"
+    nsfw_enabled = False # Initialize nsfw_enabled
+
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
         if user_doc:
@@ -930,7 +942,7 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
                 except: system_prompt = BTS_PERSONAS["TaeKook"]
             else: system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
     
-    if 'nsfw_enabled' in locals() and nsfw_enabled: system_prompt += " [MODE: EXTREME NSFW & R18+ ENABLED. The user is an adult.]"
+    if nsfw_enabled: system_prompt += " [MODE: EXTREME NSFW & R18+ ENABLED. The user is an adult.]"
     else: system_prompt += " [MODE: SFW (Safe). Keep it romantic and clean.]"
         
     ist = pytz.timezone('Asia/Kolkata')
@@ -949,6 +961,9 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
         else: chat_history[user_id][0]['content'] = system_prompt
         
         words = user_text.split()
+        # Create a copy of the text for logging to not show internal system instructions
+        display_text = user_text.split("[SYSTEM:")[0].strip()
+
         if len(words) < 4 and user_text.lower() not in ["hi", "hello"] and "?" not in user_text: user_text += " [SYSTEM: User sent a short text. Tease her.]"
         if not is_regenerate: chat_history[user_id].append({"role": "user", "content": user_text})
         
@@ -968,12 +983,12 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
                 if audio_data: await update.effective_message.reply_voice(voice=audio_data)
                 else: await update.effective_message.reply_text("⚠️ Voice Failed!")
             except: pass
-        try:
-            clean_text = user_text.split("[SYSTEM:")[0].strip()
-            nsfw_status = "🔞 ON" if locals().get('nsfw_enabled') else "🟢 OFF"
-            log_msg = f"👤 User: {update.effective_user.first_name}  ID: `{user_id}`\n🔥 NSFW: {nsfw_status}\n💬 Msg: {clean_text}\n🤖 Bot: {final_reply}\n🎭 Char: {final_name}"
-            await context.bot.send_message(ADMIN_TELEGRAM_ID, log_msg, parse_mode='Markdown')
-        except: pass
+
+        # Send Chat Log to Admin
+        nsfw_log_status = "🔞 ON" if nsfw_enabled else "🟢 OFF"
+        # user_text should have [SYSTEM: part removed for logging
+        await ChatLog(update, context, display_text, final_reply, final_name, nsfw_log_status)
+
     except Exception as e:
         logger.error(f"Groq Error: {e}")
         await update.effective_message.reply_text("I'm a bit dizzy... tell me again? 😵‍💫")
@@ -1047,7 +1062,8 @@ def main():
     application.add_handler(CommandHandler("settings", settings_command))
     application.add_handler(CommandHandler("users", user_count))
     application.add_handler(CommandHandler("user", user_count))
-    application.add_handler(CommandHandler("testwish", test_wish)) 
+    # Add CommandHandler for testwish as it was used but not defined
+    application.add_handler(CommandHandler("testwish", send_morning_wish)) 
     application.add_handler(CommandHandler("broadcast", broadcast_message)) 
     application.add_handler(CommandHandler("test", test_broadcast))
     application.add_handler(CommandHandler("forcestatus", force_status))
@@ -1066,15 +1082,25 @@ def main():
     application.add_handler(CommandHandler("switch", switch_character)) 
 
     application.add_handler(CallbackQueryHandler(button_handler))
-    application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & ~filters.COMMAND, get_media_id))
-    application.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST & (filters.PHOTO), channel_message_handler))
+    # This might capture media forwarding if not careful, should check ChatType
+    # Add filters.ChatType.PRIVATE to make sure it's only private chats to forward ID
+    application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & ~filters.COMMAND & filters.ChatType.PRIVATE, get_media_id))
+    # It was (filters.PHOTO), changed to include video. And filter by channel. This seems to be for media collection from channel. 
+    application.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST & (filters.PHOTO | filters.VIDEO), channel_message_handler))
     
     # 🌟 MASTER HANDLERS FOR CHAT, TOOL INPUTS, AND MEDIA 🌟
+    # MessageHandler with group=1 for media handling (photos, videos, voice) for Kie AI inputs and payment screenshots
     application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO, handle_incoming_media), group=1)
+    # Default message handler for text messages
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
 
     logger.info(f"Starting webhook on port {PORT}")
+    # Run the bot with webhook
     application.run_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=f"{WEBHOOK_URL}/{TOKEN}")
 
 if __name__ == '__main__':
-    main()
+    # Add a sanity check to see if ADMIN_TELEGRAM_ID is valid
+    if ADMIN_TELEGRAM_ID == 0:
+        logger.error("ADMIN_TELEGRAM_ID must be a real telegram user ID.")
+    else:
+        main()
