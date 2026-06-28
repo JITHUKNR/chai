@@ -54,7 +54,7 @@ ADMIN_CHANNEL_ID = os.environ.get('ADMIN_CHANNEL_ID', '-1002992093797')
 # 👇 1. API Keys & Settings
 ELEVEN_API_KEY = "sk_2b615fe071528fb5696ff8a1d407ab367611caa5543482bd"
 KIE_API_TOKEN = os.environ.get('KIE_API_TOKEN', "9fd5e7779094f8ca2d8da1da95e79443")
- UPI_ID = "Abhiixz@ybl"
+UPI_ID = "abhiixz@ybl"
 
 # 👇 AI STUDIO PRICING
 PRICE = {
