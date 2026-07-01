@@ -340,15 +340,14 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
     selected_char = "TaeKook"
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
-        if user_doc: selected_char = user_doc.get('character', 'TaeKook').strip() # FIXED: Strip spaces
+        if user_doc: selected_char = user_doc.get('character', 'TaeKook').strip()
     if user_id in chat_history: del chat_history[user_id]
-    system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"]) # FIXED: Now uses correct key
+    system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
     system_prompt += f" SCENARIO: {current_scenario[user_id]} "
     start_prompt = f"Start the roleplay based on the scenario: '{current_scenario[user_id]}'. Send the first message to the user now. Be immersive. "
     try:
         chat_id = update.effective_chat.id
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
         completion = groq_client.chat.completions.create(
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}],
             model="llama-3.3-70b-versatile"
@@ -465,12 +464,11 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_char = "TaeKook"
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
-        if user_doc: selected_char = user_doc.get('character', 'TaeKook').strip() # FIXED: Strip spaces
-    system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"]) # FIXED: Now uses correct key
+        if user_doc: selected_char = user_doc.get('character', 'TaeKook').strip()
+    system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
     await query.message.edit_text(f"✨ {selected_activity} with {selected_char} ...\n\n(Creating moment... 💜) ", parse_mode='Markdown')
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive. "
-        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
         completion = groq_client.chat.completions.create(
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
             model="llama-3.3-70b-versatile"
@@ -486,7 +484,6 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 🛠️ AI STUDIO MENU & STEP-BY-STEP LOGIC (/tool)
 # ---------------------------------------------------------
 async def tool_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Clear any previous states
     context.user_data['state'] = None
     user_id = update.effective_user.id
     establish_db_connection()
@@ -540,7 +537,6 @@ async def check_balance_and_proceed(query, user_id, required_credits, tool_name,
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💰 Recharge Now", callback_data="check_wallet")]])
         )
         return False
-    # Set the state for step-by-step
     context.user_data['state'] = next_state
     await query.message.edit_text(prompt_text, parse_mode='Markdown')
     return True
@@ -728,7 +724,6 @@ async def ChatLog(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text,
     user = update.effective_user
     log_msg = f"👤 User: {user.first_name} ID: `{user.id}`\n🔥 NSFW: {nsfw_status}\n💬 Msg: {user_text}\n🤖 Bot: {bot_reply}\n🎭 Char: {char_name}"
     try:
-        # Check if the user is the admin to avoid double logging
         if user.id != ADMIN_TELEGRAM_ID:
             await context.bot.send_message(ADMIN_TELEGRAM_ID, log_msg, parse_mode='Markdown')
     except Exception as e:
@@ -741,14 +736,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     data = query.data
-    # UI Routing
     if data == "open_tools":
         context.user_data['state'] = None
         await tool_menu_command(update, context)
         return
     if data.startswith("cat_"): return await sub_menu_handler(update, context)
 
-    # Wallet
     if data == "check_wallet":
         establish_db_connection()
         user_doc = db_collection_users.find_one({'user_id': user_id})
@@ -757,7 +750,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="open_tools")]]), parse_mode='Markdown')
         return
 
-    # STEP-BY-STEP TOOL CLICKS
     if data == "tool_txt2vid":
         await check_balance_and_proceed(query, user_id, PRICE['txt2vid'], "Text to Video", "WAITING_FOR_TXT2VID_PROMPT", "📝 **Text to Video**\n\nPlease type the description (prompt) of the video you want to generate. 🎬 ", context)
         return
@@ -774,7 +766,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await check_balance_and_proceed(query, user_id, PRICE['imagine'], "Imagine", "WAITING_FOR_IMAGINE_PROMPT", "✨ **AI Imagine**\n\nPlease type the description of the image you want to create! 🎨 ", context)
         return
 
-    # Old Callbacks
     if data == "settings_menu": return await settings_command(update, context)
     if data == "toggle_nsfw": return await toggle_nsfw_handler(update, context)
     if data == "close_settings" or data == "close_menu": return await query.message.delete()
@@ -790,7 +781,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "regen_msg": return await regenerate_message(update, context)
     if query.from_user.id != ADMIN_TELEGRAM_ID: return await query.answer()
 
-    # Admin Callbacks
     if data == 'admin_users': await user_count(update, context)
     elif data == 'admin_new_photo': await send_new_photo(update, context)
     elif data == 'admin_clearmedia': await clear_deleted_media(update, context)
@@ -875,7 +865,6 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
     users = db_collection_users.find({'last_seen': {'$lt': threshold_time}, 'notified_24h': {'$ne': True}})
     for user in users:
         try:
-            # FIXED: Strip spaces from character name before lookup
             char_from_db = user.get('character', 'TaeKook').strip()
             sys_prompt = BTS_PERSONAS.get(char_from_db, BTS_PERSONAS["TaeKook"])
             completion = groq_client.chat.completions.create(
@@ -901,7 +890,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     state = context.user_data.get('state')
 
-    # 1. Feedback Mode
     if context.user_data.get('waiting_for_feedback'):
         try:
             await context.bot.send_message(ADMIN_TELEGRAM_ID, text=f"📩 **FEEDBACK RECEIVED:**\n👤 From: {update.effective_user.first_name} (`{user_id}`)\n💬: {user_text} ", parse_mode='Markdown')
@@ -910,12 +898,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['waiting_for_feedback'] = False
         return
 
-    # 2. STEP-BY-STEP TOOL TEXT INPUTS
     if state == "WAITING_FOR_TXT2VID_PROMPT":
         await update.message.reply_text(f"🎬 Creating video for: '{user_text}'... (Consuming {PRICE['txt2vid']} credits) ")
         db_collection_users.update_one({'user_id': user_id}, {'$inc': {'credits': -PRICE['txt2vid']}})
         context.user_data['state'] = None
-        # Here you will add the actual API call logic for Kie.ai Text to Video
         await asyncio.sleep(2)
         await update.message.reply_text("✅ Video request sent! (Placeholder for actual API integration) ")
         return
@@ -932,12 +918,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"🎨 Generating image for: '{user_text}'... (Consuming {PRICE['imagine']} credits) ")
         db_collection_users.update_one({'user_id': user_id}, {'$inc': {'credits': -PRICE['imagine']}})
         context.user_data['state'] = None
-        # Fallback quick generation using pollination
         image_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(user_text)}?nologo=true"
         await update.message.reply_photo(image_url, caption=f"✨ `{user_text}` ")
         return
 
-    # 3. Normal Roleplay Logic
     if establish_db_connection(): db_collection_users.update_one({'user_id': user_id}, {'$set': {'last_seen': datetime.now(timezone.utc), 'notified_24h': False}}, upsert=True)
     if user_id in current_scenario and current_scenario[user_id] == "WAITING_FOR_PLOT":
         current_scenario[user_id] = user_text
@@ -955,13 +939,10 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
     user = update.effective_user
     state = context.user_data.get('state')
 
-    # 🔴 CRITICAL FIX: Prevent text messages from entering this handler
+    # 🔴 BLOCK TEXT MESSAGES FROM ENTERING THIS HANDLER
     if update.message.text:
-        # If there's text, let the main text handler deal with it.
-        # This prevents conflicts between text and media handlers.
         return await handle_message(update, context)
 
-    # 1. Payment Screenshot Check (Only if NO state is active)
     if update.message.photo and user.id != ADMIN_TELEGRAM_ID and not state:
         try:
             await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
@@ -971,7 +952,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             logger.error(f"Error forwarding payment screenshot: {e}")
         return
 
-    # 2. STEP-BY-STEP IMAGE INPUTS
     if state == "WAITING_FOR_IMG2VID_IMAGE" and update.message.photo:
         context.user_data['img2vid_file'] = update.message.photo[-1].file_id
         context.user_data['state'] = "WAITING_FOR_IMG2VID_PROMPT"
@@ -1000,10 +980,8 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text("✅ Upscale task created! (Placeholder) ")
         return
 
-    # 3. Old Voice / Vision Forwarding Logic
     if user.id == ADMIN_TELEGRAM_ID: return
     try:
-        # Forward incoming media to the admin
         if user.id != ADMIN_TELEGRAM_ID:
             await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
 
@@ -1024,7 +1002,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             caption = update.message.caption if update.message.caption else ""
             system_instruction = f"[SYSTEM: The user sent a PHOTO. ROLEPLAY that you see it. User's caption: '{caption}'] "
 
-        # Additional Media handling
         if update.message.video:
             caption = update.message.caption if update.message.caption else ""
             system_instruction = f"[SYSTEM: The user sent a VIDEO. ROLEPLAY that you see it. User's caption: '{caption}'] "
@@ -1038,12 +1015,12 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
     user_id = update.effective_user.id
     if not is_regenerate: await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
     system_prompt, selected_char, final_name = "", "TaeKook", "TaeKook"
-    nsfw_enabled = False # Initialize nsfw_enabled
+    nsfw_enabled = False
 
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
         if user_doc:
-            selected_char = user_doc.get('character', 'TaeKook').strip() # FIXED: Strip spaces
+            selected_char = user_doc.get('character', 'TaeKook').strip()
             user_persona = user_doc.get('user_persona', 'Unknown')
             nsfw_enabled = user_doc.get('nsfw_enabled', False)
             user_language = user_doc.get('user_language', 'English')
@@ -1055,9 +1032,9 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
                     if 0 <= char_index < len(my_chars):
                         final_name = my_chars[char_index]['name']
                         system_prompt = f"Roleplay as {final_name}. CHARACTER DESCRIPTION: {my_chars[char_index]['bio']}. " + COMMON_RULES
-                    else: system_prompt = BTS_PERSONAS["TaeKook"] # FIXED: Use default
-                except: system_prompt = BTS_PERSONAS["TaeKook"] # FIXED: Use default
-            else: system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"]) # FIXED: Now uses correct key
+                    else: system_prompt = BTS_PERSONAS["TaeKook"]
+                except: system_prompt = BTS_PERSONAS["TaeKook"]
+            else: system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
 
     if nsfw_enabled: system_prompt += " [MODE: EXTREME NSFW & R18+ ENABLED. The user is an adult.] "
     else: system_prompt += " [MODE: SFW (Safe). Keep it romantic and clean.] "
@@ -1078,13 +1055,11 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
         else: chat_history[user_id][0]['content'] = system_prompt
 
         words = user_text.split()
-        # Create a copy of the text for logging to not show internal  system instructions
         display_text = user_text.split("[SYSTEM: ")[0].strip()
 
         if len(words) < 4 and user_text.lower() not in ["hi", "hello"] and "?" not in user_text: user_text += " [SYSTEM: User sent a short text. Tease her.] "
         if not is_regenerate: chat_history[user_id].append({"role": "user", "content": user_text})
 
-        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
         completion = groq_client.chat.completions.create(
             messages=chat_history[user_id],
             model="llama-3.3-70b-versatile"
@@ -1105,9 +1080,7 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
                 else: await update.effective_message.reply_text("⚠️ Voice Failed! ")
             except: pass
 
-        # Send Chat Log to Admin
         nsfw_log_status = "🔞 ON" if nsfw_enabled else "🟢 OFF"
-        # user_text should have [SYSTEM: part removed for logging
         await ChatLog(update, context, display_text, final_reply, final_name, nsfw_log_status)
 
     except Exception as e:
@@ -1188,7 +1161,6 @@ def main():
     application.add_handler(CommandHandler("settings", settings_command))
     application.add_handler(CommandHandler("users", user_count))
     application.add_handler(CommandHandler("user", user_count))
-    # Add CommandHandler for testwish as it was used but not defined
     application.add_handler(CommandHandler("testwish", send_morning_wish))
     application.add_handler(CommandHandler("broadcast", broadcast_message))
     application.add_handler(CommandHandler("test", test_broadcast))
@@ -1208,25 +1180,16 @@ def main():
     application.add_handler(CommandHandler("switch", switch_character))
 
     application.add_handler(CallbackQueryHandler(button_handler))
-    # This might capture media forwarding if not careful, should check ChatType
-    # Add filters.Chat Type.PRIVATE to make sure it's only private chats to forward ID
     application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & ~filters.COMMAND & filters.ChatType.PRIVATE, get_media_id))
-    # It was (filters.PHOTO), changed to include video. And filter by channel. This seems to be for media collection from channel.
     application.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST & (filters.PHOTO | filters.VIDEO), channel_message_handler))
 
-    # 🌟 MASTER HANDLERS FOR CHAT, TOOL INPUTS, AND MEDIA 🌟
-    # MessageHandler with group=1 for media handling (photos, videos, voice) for Kie AI inputs and payment screenshots
-    # FIXED: Removed TEXT filter to prevent conflict with handle_message
     application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO, handle_incoming_media), group=1)
-    # Default message handler for text messages
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
 
     logger.info(f"Starting webhook on port {PORT} ")
-    # Run the bot with webhook
     application.run_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=f"{WEBHOOK_URL}/{TOKEN}")
 
 if __name__ == '__main__':
-    # Add a sanity check to see if ADMIN_TELEGRAM_ID is valid
     if ADMIN_TELEGRAM_ID == 0:
         logger.error("ADMIN_TELEGRAM_ID must be a real telegram user ID.")
     else:
