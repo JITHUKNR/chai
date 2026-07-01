@@ -326,7 +326,7 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
     try:
         chat_id = update.effective_chat.id
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-        # 🌟 UPDATED: Model llama-3.3-70b-versatile -> llama-3.3-70b-specdec
+        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
         completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}], model="llama-3.3-70b-specdec")
         msg = completion.choices[0].message.content.strip()
         final_msg = add_emojis_balanced(msg)
@@ -426,7 +426,7 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(f"✨ **{selected_activity}** with **{selected_char}**...\n\n(Creating moment... 💜)", parse_mode='Markdown')
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive."
-        # 🌟 UPDATED: Model llama-3.3-70b-versatile -> llama-3.3-70b-specdec
+        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
         completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="llama-3.3-70b-specdec")
         reply_text = completion.choices[0].message.content.strip()
         final_reply = add_emojis_balanced(reply_text)
