@@ -8,7 +8,6 @@ import pytz
 import urllib.parse 
 import base64
 from groq import Groq
-from duckduckgo_search import DDGS
 from telegram import Update, BotCommand, ReplyKeyboardRemove 
 from telegram.constants import ChatAction
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler 
@@ -44,6 +43,7 @@ TOKEN = os.environ.get('TOKEN')
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 PORT = int(os.environ.get('PORT', 8443))
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY') # പുതിയ OpenRouter Key
 MONGO_URI = os.environ.get('MONGO_URI') 
 
 # ✅✅✅ YOUR ID ✅✅✅
@@ -142,16 +142,22 @@ db_collection_sent = None
 db_collection_cooldown = None
 DB_NAME = "Taekook_bot" 
 
+# --- AI Setup ---
 groq_client = None
+chat_history = {} 
+last_user_message = {} 
+current_scenario = {} 
+
 try:
-    if not GROQ_API_KEY: raise ValueError("GROQ_API_KEY is not set.")
-    groq_client = Groq(api_key=GROQ_API_KEY)
-    chat_history = {} 
-    last_user_message = {} 
-    current_scenario = {} 
-    logger.info("Groq AI client loaded successfully.")
+    if GROQ_API_KEY:
+        groq_client = Groq(api_key=GROQ_API_KEY)
+        logger.info("Groq AI client (For Voice) loaded successfully.")
+    if OPENROUTER_API_KEY:
+        logger.info("OpenRouter API (For Chat) loaded successfully.")
+    else:
+        logger.error("WARNING: OPENROUTER_API_KEY is not set!")
 except Exception as e:
-    logger.error(f"Groq AI setup failed: {e}")
+    logger.error(f"AI setup failed: {e}")
 
 def add_emojis_balanced(text):
     if any(char in text for char in ["💜", "❤️", "🥰", "😍", "😘", "🔥", "😂"]): return text 
@@ -288,18 +294,37 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
         user_doc = db_collection_users.find_one({'user_id': user_id})
         if user_doc: selected_char = user_doc.get('character', 'TaeKook')
     if user_id in chat_history: del chat_history[user_id]
+    
     system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
     system_prompt += f" SCENARIO: {current_scenario[user_id]}"
     start_prompt = f"Start the roleplay based on the scenario: '{current_scenario[user_id]}'. Send the first message to the user now. Be immersive."
+    
     try:
         chat_id = update.effective_chat.id
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}], model="llama-3.3-70b-versatile")
-        msg = completion.choices[0].message.content.strip()
+        
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+            "messages": [
+                {"role": "system", "content": system_prompt}, 
+                {"role": "user", "content": start_prompt}
+            ]
+        }
+        
+        response = requests.post(url, headers=headers, json=payload).json()
+        msg = response['choices'][0]['message']['content'].strip()
         final_msg = add_emojis_balanced(msg)
+        
         chat_history[user_id] = [{"role": "system", "content": system_prompt}, {"role": "assistant", "content": final_msg}]
         await context.bot.send_message(chat_id, f"✨ **Story Started!**\n\n{final_msg}", parse_mode='Markdown')
-    except Exception: await context.bot.send_message(chat_id, "Ready! You can start chatting now. 💜")
+    except Exception as e: 
+        logger.error(f"OpenRouter Start Roleplay Error: {e}")
+        await context.bot.send_message(chat_id, "Ready! You can start chatting now. 💜")
 
 async def set_persona_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -393,11 +418,27 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(f"✨ **{selected_activity}** with **{selected_char}**...\n\n(Creating moment... 💜)", parse_mode='Markdown')
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive."
-        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="llama-3.3-70b-versatile")
-        reply_text = completion.choices[0].message.content.strip()
+        
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+            "messages": [
+                {"role": "system", "content": system_prompt}, 
+                {"role": "user", "content": prompt}
+            ]
+        }
+        
+        response = requests.post(url, headers=headers, json=payload).json()
+        reply_text = response['choices'][0]['message']['content'].strip()
         final_reply = add_emojis_balanced(reply_text)
         await query.message.edit_text(final_reply, parse_mode='Markdown')
-    except Exception: await query.message.edit_text("Let's just look at the stars instead... ✨")
+    except Exception as e: 
+        logger.error(f"OpenRouter Date Error: {e}")
+        await query.message.edit_text("Let's just look at the stars instead... ✨")
 
 
 async def tool_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -438,7 +479,6 @@ async def check_balance_and_proceed(query, user_id, required_credits, tool_name,
     context.user_data['state'] = next_state
     await query.message.edit_text(prompt_text, parse_mode='Markdown')
     return True
-
 
 async def imagine_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_query = " ".join(context.args)
@@ -509,7 +549,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "open_tools": 
         context.user_data['state'] = None
-        await tool_menu_command(update, context) # Changed to tool_menu_command
+        await tool_menu_command(update, context) 
         return
     if data.startswith("cat_"): return await sub_menu_handler(update, context)
     
@@ -645,7 +685,12 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
 
         system_instruction = ""
+        # 🎙️ Voice messages (Uses Groq)
         if update.message.voice or update.message.audio:
+            if not groq_client:
+                await update.message.reply_text("⚠️ Voice transcription is currently unavailable.")
+                return
+                
             status_msg = await update.message.reply_text("🎧 Listening...")
             file_id = update.message.voice.file_id if update.message.voice else update.message.audio.file_id
             new_file = await context.bot.get_file(file_id)
@@ -657,6 +702,7 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
                 system_instruction = f"[SYSTEM: User sent a VOICE NOTE. They said: '{transcription.text}'. Reply to them.]"
                 await context.bot.delete_message(chat_id=update.message.chat_id, message_id=status_msg.message_id)
             except: system_instruction = "[SYSTEM: User sent a voice note but I couldn't hear it clearly.]"
+        
         elif update.message.photo:
             caption = update.message.caption if update.message.caption else ""
             system_instruction = f"[SYSTEM: The user sent a PHOTO. ROLEPLAY that you see it. User's caption: '{caption}']"
@@ -719,8 +765,30 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
         if len(words) < 4 and user_text.lower() not in ["hi", "hello"] and "?" not in user_text: user_text += " [SYSTEM: User sent a short text. Tease her.]"
         if not is_regenerate: chat_history[user_id].append({"role": "user", "content": user_text})
         
-        completion = groq_client.chat.completions.create(messages=chat_history[user_id], model="llama-3.3-70b-versatile")
-        reply_text = completion.choices[0].message.content.strip()
+        # 🟢 OpenRouter API Integration for Chat
+        if not OPENROUTER_API_KEY:
+            await update.effective_message.reply_text("⚠️ OpenRouter API Key is missing! Contact Admin.")
+            return
+
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+            "messages": chat_history[user_id]
+        }
+        
+        response = requests.post(url, headers=headers, json=payload).json()
+        
+        # Checking if OpenRouter returned an error (like rate limit or server error)
+        if "error" in response:
+            logger.error(f"OpenRouter Error: {response['error']}")
+            reply_text = "I'm having a little headache... let's talk in a minute. 😵‍💫"
+        else:
+            reply_text = response['choices'][0]['message']['content'].strip()
+
         final_reply = add_emojis_balanced(reply_text)
         chat_history[user_id].append({"role": "assistant", "content": final_reply})
         
@@ -740,11 +808,11 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
         await ChatLog(update, context, display_text, final_reply, final_name, nsfw_log_status)
 
     except Exception as e:
-        logger.error(f"Groq Error: {e}")
+        logger.error(f"Chat Generation Error: {e}")
         await update.effective_message.reply_text("I'm a bit dizzy... tell me again? 😵‍💫")
 
 async def post_init(application: Application):
-    await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted & Updated!** 🚀\nUltimate AI Studio is Live.", parse_mode='Markdown')
+    await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted & Updated!** 🚀\nUltimate AI Studio is Live with OpenRouter.", parse_mode='Markdown')
     commands = [
         BotCommand("start", "🔄 Restart Bot"),
         BotCommand("tool", "🛠️ AI Studio"),
@@ -766,7 +834,7 @@ async def post_init(application: Application):
     if ADMIN_TELEGRAM_ID: application.create_task(admin.run_hourly_cleanup(application))
 
 def main():
-    if not all([TOKEN, WEBHOOK_URL, GROQ_API_KEY]):
+    if not all([TOKEN, WEBHOOK_URL]):
         logger.error("Env vars missing.")
         return
     application = Application.builder().token(TOKEN).post_init(post_init).build()
