@@ -316,7 +316,8 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
             ]
         }
         
-                response = requests.post(url, headers=headers, json=payload).json()
+        response = requests.post(url, headers=headers, json=payload).json()
+        
         if 'choices' in response:
             msg = response['choices'][0]['message']['content'].strip()
         else:
@@ -791,8 +792,6 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
         else:
             logger.error(f"OpenRouter Error: {response}")
             reply_text = "I'm having a little headache... let's talk in a minute. 😵‍💫"
-        else:
-            reply_text = response['choices'][0]['message']['content'].strip()
 
         final_reply = add_emojis_balanced(reply_text)
         chat_history[user_id].append({"role": "assistant", "content": final_reply})
