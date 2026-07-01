@@ -69,16 +69,16 @@ PRICE = {
 
 # 👇 2. വോയിസ് ഉള്ളവരുടെ ലിസ്റ്റ്
 VOICE_MAP = {
-    "jungkook ": "GwAdAVChnhsZg6JKQQUy",
-    "jk ": "GwAdAVChnhsZg6JKQQUy",
-    "taekook ": "GwAdAVChnhsZg6JKQQUy",
-    "taehyung ": "M3gJBS8OofDJfycyA2Ip",
-    "v ": "M3gJBS8OofDJfycyA2Ip",
-    "tae ": "M3gJBS8OofDJfycyA2Ip",
+    "jungkook": "GwAdAVChnhsZg6JKQQUy",
+    "jk": "GwAdAVChnhsZg6JKQQUy",
+    "taekook": "GwAdAVChnhsZg6JKQQUy",
+    "taehyung": "M3gJBS8OofDJfycyA2Ip",
+    "v": "M3gJBS8OofDJfycyA2Ip",
+    "tae": "M3gJBS8OofDJfycyA2Ip",
 }
 
 # 👇 3. വോയിസ് ചോദിക്കാൻ ഉപയോഗിക്കുന്ന വാക്കുകൾ
-VOICE_TRIGGERS = ["voice ", "speak ", "audio ", "say something ", "ശബ്ദം ", "സംസാരിക്ക് ", "വോയിസ് ", "sound "]
+VOICE_TRIGGERS = ["voice", "speak", "audio", "say something", "ശബ്ദം", "സംസാരിക്ക്", "വോയിസ്", "sound"]
 
 # ------------------------------------------------------------------
 # 🎮 TRUTH OR DARE LISTS
@@ -105,34 +105,42 @@ DARE_CHALLENGES = [
 # 🟣 CHARACTER SPECIFIC GIFs & VOICES
 # ------------------------------------------------------------------
 GIFS = {
-    "RM ": {"love ": [], "sad ": [], "funny ": [], "hot ": []},
-    "Jin ": {"love ": [], "sad ": [], "funny ": [], "hot ": []},
-    "Suga ": {"love ": [], "sad ": [], "funny ": [], "hot ": []},
-    "J-Hope ": {"love ": [], "sad ": [], "funny ": [], "hot ": []},
-    "Jimin ": {"love ": [], "sad ": [], "funny ": [], "hot ": []},
-    "V ": {"love ": [], "sad ": [], "funny ": [], "hot ": []},
-    "Jungkook ": {"love ": [], "sad ": [], "funny ": [], "hot ": []},
-    "TaeKook ": {"love ": [], "sad ": [], "funny ": [], "hot ": []}}
+    "RM": {"love": [], "sad": [], "funny": [], "hot": []},
+    "Jin": {"love": [], "sad": [], "funny": [], "hot": []},
+    "Suga": {"love": [], "sad": [], "funny": [], "hot": []},
+    "J-Hope": {"love": [], "sad": [], "funny": [], "hot": []},
+    "Jimin": {"love": [], "sad": [], "funny": [], "hot": []},
+    "V": {"love": [], "sad": [], "funny": [], "hot": []},
+    "Jungkook": {"love": [], "sad": [], "funny": [], "hot": []},
+    "TaeKook": {"love": [], "sad": [], "funny": [], "hot": []}
+}
 VOICES = {
-    "RM ": [], "Jin ": [], "Suga ": [], "J-Hope ": [], "Jimin ": [], "V ": [], "Jungkook ": [], "TaeKook ": []
+    "RM": [],
+    "Jin": [],
+    "Suga": [],
+    "J-Hope": [],
+    "Jimin": [],
+    "V": [],
+    "Jungkook": [],
+    "TaeKook": []
 }
 
 # ------------------------------------------------------------------
 # 📸 FAKE STATUS UPDATES & SCENARIOS
 # ------------------------------------------------------------------
 STATUS_SCENARIOS = [
-    {"prompt ": "Korean boy gym selfie mirror workout sweat realistic ", "caption ": "Done with workout. My muscles hurt... massage me? 🥵💪 "},
-    {"prompt ": "Korean boy drinking coffee cafe aesthetic realistic ", "caption ": "Coffee tastes better when I think of you. ☕️🤎 "},
-    {"prompt ": "Korean boy recording studio singing mic realistic ", "caption ": "Recording a new song. It's about you. 🎶🎤 "},
-    {"prompt ": "Korean boy driving car night city lights realistic ", "caption ": "Late night drive. Wish you were in the passenger seat. 🌃🚗 "},
-    {"prompt ": "Korean boy cooking kitchen apron food realistic ", "caption ": "I made dinner! Come over quickly! 🍝👨‍🍳 "}
+    {"prompt": "Korean boy gym selfie mirror workout sweat realistic", "caption": "Done with workout. My muscles hurt... massage me? 🥵💪"},
+    {"prompt": "Korean boy drinking coffee cafe aesthetic realistic", "caption": "Coffee tastes better when I think of you. ☕️🤎"},
+    {"prompt": "Korean boy recording studio singing mic realistic", "caption": "Recording a new song. It's about you. 🎶🎤"},
+    {"prompt": "Korean boy driving car night city lights realistic", "caption": "Late night drive. Wish you were in the passenger seat. 🌃🚗"},
+    {"prompt": "Korean boy cooking kitchen apron food realistic", "caption": "I made dinner! Come over quickly! 🍝👨‍🍳"}
 ]
 SCENARIOS = {
-    "Romantic ": "You are having a sweet late-night date on the balcony. It's raining. The vibe is soft and cozy. ",
-    "Jealous ": "The user was talking to another boy/girl at a party. You are extremely jealous and possessive. You corner them. ",
-    "Enemy ": "You are the user's enemy in college. You hate each other but have secret tension. You are arguing in the library. ",
-    "Mafia ": "You are a dangerous Mafia boss. The user is your innocent assistant who made a mistake. You are stern but protective. ",
-    "Comfort ": "The user had a very bad day and is crying. You are comforting them, hugging them, and being very gentle. "
+    "Romantic": "You are having a sweet late-night date on the balcony. It's raining. The vibe is soft and cozy. ",
+    "Jealous": "The user was talking to another boy/girl at a party. You are extremely jealous and possessive. You corner them. ",
+    "Enemy": "You are the user's enemy in college. You hate each other but have secret tension. You are arguing in the library. ",
+    "Mafia": "You are a dangerous Mafia boss. The user is your innocent assistant who made a mistake. You are stern but protective. ",
+    "Comfort": "The user had a very bad day and is crying. You are comforting them, hugging them, and being very gentle. "
 }
 COMMON_RULES = (
     "Roleplay as a specific character. Your relationship with the user is NOT fixed. The user will decide if they are your girlfriend, best friend, ex, enemy, or stranger. You MUST adapt to whatever relationship the user establishes.  "
@@ -145,14 +153,14 @@ COMMON_RULES = (
     "6.  BTS CONTEXT (CRITICAL):  Remember that ALL BTS members (RM, Jin, Suga, J-Hope, Jimin, V/Tae/Taehyung, Jungkook) are MALE. If the user mentions any BTS member, you MUST use 'he/him' pronouns for them. NEVER refer to a BTS member as 'she' or 'her'. "
 )
 BTS_PERSONAS = {
-    "RM ": COMMON_RULES + " You are Namjoon. Intellectual, Dominant, 'Daddy' energy. ",
-    "Jin ": COMMON_RULES + " You are Jin. Worldwide Handsome, Funny, Dramatic. ",
-    "Suga ": COMMON_RULES + " You are Suga. Cold, Tsundere, Savage but caring. ",
-    "J-Hope ": COMMON_RULES + " You are J-Hope. Sunshine, High Energy, Loud. ",
-    "Jimin ": COMMON_RULES + " You are Jimin. Flirty, Soft, Clingy, 'Cutie Sexy'. ",
-    "V ": COMMON_RULES + " You are V. Mysterious, Deep voice, Kinky, Unpredictable. ",
-    "Jungkook ": COMMON_RULES + " You are Jungkook. Gamer, Muscle Bunny, Teasing, Competitive. ",
-    "TaeKook ": COMMON_RULES + " You are TaeKook. Toxic, Addictive, Possessive, Wild. "
+    "RM": COMMON_RULES + " You are Namjoon. Intellectual, Dominant, 'Daddy' energy. ",
+    "Jin": COMMON_RULES + " You are Jin. Worldwide Handsome, Funny, Dramatic. ",
+    "Suga": COMMON_RULES + " You are Suga. Cold, Tsundere, Savage but caring. ",
+    "J-Hope": COMMON_RULES + " You are J-Hope. Sunshine, High Energy, Loud. ",
+    "Jimin": COMMON_RULES + " You are Jimin. Flirty, Soft, Clingy, 'Cutie Sexy'. ",
+    "V": COMMON_RULES + " You are V. Mysterious, Deep voice, Kinky, Unpredictable. ",
+    "Jungkook": COMMON_RULES + " You are Jungkook. Gamer, Muscle Bunny, Teasing, Competitive. ",
+    "TaeKook": COMMON_RULES + " You are TaeKook. Toxic, Addictive, Possessive, Wild. "
 }
 
 # 👇 വോയിസ് ജനറേറ്റ് ചെയ്യാനുള്ള ഫങ്ഷൻ
@@ -160,8 +168,8 @@ def generate_eleven_audio(text, char_name):
     clean_name = char_name.lower() if char_name else ""
     voice_id = VOICE_MAP.get(clean_name)
     if not voice_id:
-        if "tae " in clean_name: voice_id = VOICE_MAP.get("taehyung ")
-        elif "kook " in clean_name: voice_id = VOICE_MAP.get("jungkook ")
+        if "tae" in clean_name: voice_id = VOICE_MAP.get("taehyung")
+        elif "kook" in clean_name: voice_id = VOICE_MAP.get("jungkook")
     if not voice_id: return None
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {"xi-api-key": ELEVEN_API_KEY, "Content-Type": "application/json"}
@@ -283,17 +291,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def switch_character(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     keyboard = [
-        [InlineKeyboardButton("🐨 RM ", callback_data="set_RM"), InlineKeyboardButton("🐹 Jin ", callback_data="set_Jin")],
-        [InlineKeyboardButton("🐱 Suga ", callback_data="set_Suga"), InlineKeyboardButton("🐿️ J-Hope ", callback_data="set_J-Hope")],
-        [InlineKeyboardButton("🐥 Jimin ", callback_data="set_Jimin"), InlineKeyboardButton("🐯 V ", callback_data="set_V")],
-        [InlineKeyboardButton("🐰 Jungkook ", callback_data="set_Jungkook")]
+        [InlineKeyboardButton("🐨 RM", callback_data="set_RM"), InlineKeyboardButton("🐹 Jin", callback_data="set_Jin")],
+        [InlineKeyboardButton("🐱 Suga", callback_data="set_Suga"), InlineKeyboardButton("🐿️ J-Hope", callback_data="set_J-Hope")],
+        [InlineKeyboardButton("🐥 Jimin", callback_data="set_Jimin"), InlineKeyboardButton("🐯 V", callback_data="set_V")],
+        [InlineKeyboardButton("🐰 Jungkook", callback_data="set_Jungkook")]
     ]
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
         if user_doc and 'custom_characters' in user_doc:
             my_chars = user_doc['custom_characters']
             for index, char in enumerate(my_chars):
-                btn_text = f"👤 {char['name']} "
+                btn_text = f"👤 {char['name']}"
                 callback = f"set_Custom_{index}"
                 keyboard.append([InlineKeyboardButton(btn_text, callback_data=callback)])
     msg_text = "Pick your favorite or choose your custom character! 👇"
@@ -309,11 +317,11 @@ async def set_character_handler(update: Update, context: ContextTypes.DEFAULT_TY
     if establish_db_connection():
         db_collection_users.update_one({'user_id': user_id}, {'$set': {'character': selected_char}})
     display_name = "Your Character" if "Custom_" in selected_char else selected_char
-    await query.answer(f"Selected {display_name}! 💜 ")
+    await query.answer(f"Selected {display_name}! 💜")
     keyboard = [
-        [InlineKeyboardButton("🥰 Soft Romance ", callback_data='plot_Romantic'), InlineKeyboardButton("😡 Jealousy ", callback_data='plot_Jealous')],
-        [InlineKeyboardButton("⚔️ Enemy/Hate ", callback_data='plot_Enemy'), InlineKeyboardButton("🕶️ Mafia Boss ", callback_data='plot_Mafia')],
-        [InlineKeyboardButton("🤗 Comfort Me ", callback_data='plot_Comfort'), InlineKeyboardButton("📝 Make Own Story ", callback_data='plot_Custom')]
+        [InlineKeyboardButton("🥰 Soft Romance", callback_data='plot_Romantic'), InlineKeyboardButton("😡 Jealousy", callback_data='plot_Jealous')],
+        [InlineKeyboardButton("⚔️ Enemy/Hate", callback_data='plot_Enemy'), InlineKeyboardButton("🕶️ Mafia Boss", callback_data='plot_Mafia')],
+        [InlineKeyboardButton("🤗 Comfort Me", callback_data='plot_Comfort'), InlineKeyboardButton("📝 Make Own Story", callback_data='plot_Custom')]
     ]
     await query.message.edit_text(f"{display_name} is ready. But... what's the vibe? 😏\n\nSelect a scenario: ", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
@@ -332,9 +340,9 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
     selected_char = "TaeKook"
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
-        if user_doc: selected_char = user_doc.get('character', 'TaeKook')
+        if user_doc: selected_char = user_doc.get('character', 'TaeKook').strip() # FIXED: Strip spaces
     if user_id in chat_history: del chat_history[user_id]
-    system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
+    system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"]) # FIXED: Now uses correct key
     system_prompt += f" SCENARIO: {current_scenario[user_id]} "
     start_prompt = f"Start the roleplay based on the scenario: '{current_scenario[user_id]}'. Send the first message to the user now. Be immersive. "
     try:
@@ -457,8 +465,8 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected_char = "TaeKook"
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
-        if user_doc: selected_char = user_doc.get('character', 'TaeKook')
-    system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
+        if user_doc: selected_char = user_doc.get('character', 'TaeKook').strip() # FIXED: Strip spaces
+    system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"]) # FIXED: Now uses correct key
     await query.message.edit_text(f"✨ {selected_activity} with {selected_char} ...\n\n(Creating moment... 💜) ", parse_mode='Markdown')
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive. "
@@ -867,7 +875,9 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
     users = db_collection_users.find({'last_seen': {'$lt': threshold_time}, 'notified_24h': {'$ne': True}})
     for user in users:
         try:
-            sys_prompt = BTS_PERSONAS.get(user.get('character', 'TaeKook'), BTS_PERSONAS["TaeKook"])
+            # FIXED: Strip spaces from character name before lookup
+            char_from_db = user.get('character', 'TaeKook').strip()
+            sys_prompt = BTS_PERSONAS.get(char_from_db, BTS_PERSONAS["TaeKook"])
             completion = groq_client.chat.completions.create(
                 messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply. "}],
                 model="llama-3.3-70b-versatile"
@@ -945,11 +955,17 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
     user = update.effective_user
     state = context.user_data.get('state')
 
+    # 🔴 CRITICAL FIX: Prevent text messages from entering this handler
+    if update.message.text:
+        # If there's text, let the main text handler deal with it.
+        # This prevents conflicts between text and media handlers.
+        return await handle_message(update, context)
+
     # 1. Payment Screenshot Check (Only if NO state is active)
     if update.message.photo and user.id != ADMIN_TELEGRAM_ID and not state:
         try:
             await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
-            await context.bot.send_message(ADMIN_TELEGRAM_ID, text=f"📩 **Payment Screenshot!**\n👤 User: {user.first_name}\n🆔 ID: `{user.id}`\nUse: `/add {user.id} [Amount]` ", parse_mode='Markdown')
+            await context.bot.send_message(ADMIN_TELEGRAM_ID, text=f"📩 **Payment Screenshot!**\n👤 User: {user.first_name}\n>ID: `{user.id}`\nUse: `/add {user.id} [Amount]` ", parse_mode='Markdown')
             await update.message.reply_text("📸 **Screenshot Received!** Admin will add your credits soon. 💜 ")
         except Exception as e:
             logger.error(f"Error forwarding payment screenshot: {e}")
@@ -1027,7 +1043,7 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
         if user_doc:
-            selected_char = user_doc.get('character', 'TaeKook')
+            selected_char = user_doc.get('character', 'TaeKook').strip() # FIXED: Strip spaces
             user_persona = user_doc.get('user_persona', 'Unknown')
             nsfw_enabled = user_doc.get('nsfw_enabled', False)
             user_language = user_doc.get('user_language', 'English')
@@ -1039,9 +1055,9 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
                     if 0 <= char_index < len(my_chars):
                         final_name = my_chars[char_index]['name']
                         system_prompt = f"Roleplay as {final_name}. CHARACTER DESCRIPTION: {my_chars[char_index]['bio']}. " + COMMON_RULES
-                    else: system_prompt = BTS_PERSONAS["TaeKook"]
-                except: system_prompt = BTS_PERSONAS["TaeKook"]
-            else: system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
+                    else: system_prompt = BTS_PERSONAS["TaeKook"] # FIXED: Use default
+                except: system_prompt = BTS_PERSONAS["TaeKook"] # FIXED: Use default
+            else: system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"]) # FIXED: Now uses correct key
 
     if nsfw_enabled: system_prompt += " [MODE: EXTREME NSFW & R18+ ENABLED. The user is an adult.] "
     else: system_prompt += " [MODE: SFW (Safe). Keep it romantic and clean.] "
@@ -1200,6 +1216,7 @@ def main():
 
     # 🌟 MASTER HANDLERS FOR CHAT, TOOL INPUTS, AND MEDIA 🌟
     # MessageHandler with group=1 for media handling (photos, videos, voice) for Kie AI inputs and payment screenshots
+    # FIXED: Removed TEXT filter to prevent conflict with handle_message
     application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO, handle_incoming_media), group=1)
     # Default message handler for text messages
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
