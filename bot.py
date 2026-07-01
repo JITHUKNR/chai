@@ -326,8 +326,8 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
     try:
         chat_id = update.effective_chat.id
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
-        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}], model="qwen/qwen3-32b")
+        # 🌟 UPDATED: Model llama-3.3-70b-versatile -> llama-3.3-70b-specdec
+        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}], model="llama-3.3-70b-specdec")
         msg = completion.choices[0].message.content.strip()
         final_msg = add_emojis_balanced(msg)
         chat_history[user_id] = [{"role": "system", "content": system_prompt}, {"role": "assistant", "content": final_msg}]
@@ -426,8 +426,8 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(f"✨ **{selected_activity}** with **{selected_char}**...\n\n(Creating moment... 💜)", parse_mode='Markdown')
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive."
-        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
-        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="qwen/qwen3-32b")
+        # 🌟 UPDATED: Model llama-3.3-70b-versatile -> llama-3.3-70b-specdec
+        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="llama-3.3-70b-specdec")
         reply_text = completion.choices[0].message.content.strip()
         final_reply = add_emojis_balanced(reply_text)
         await query.message.edit_text(final_reply, parse_mode='Markdown')
@@ -780,7 +780,7 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
     for user in users:
         try:
             sys_prompt = BTS_PERSONAS.get(user.get('character', 'TaeKook'), BTS_PERSONAS["TaeKook"])
-            completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}], model="qwen/qwen3-32b")
+            completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}], model="llama-3.3-70b-specdec")
             await context.bot.send_message(user['user_id'], completion.choices[0].message.content.strip(), parse_mode='Markdown')
             db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
         except: pass
@@ -967,7 +967,7 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
         if len(words) < 4 and user_text.lower() not in ["hi", "hello"] and "?" not in user_text: user_text += " [SYSTEM: User sent a short text. Tease her.]"
         if not is_regenerate: chat_history[user_id].append({"role": "user", "content": user_text})
         
-        completion = groq_client.chat.completions.create(messages=chat_history[user_id], model="qwen/qwen3-32b")
+        completion = groq_client.chat.completions.create(messages=chat_history[user_id], model="llama-3.3-70b-specdec")
         reply_text = completion.choices[0].message.content.strip()
         final_reply = add_emojis_balanced(reply_text)
         chat_history[user_id].append({"role": "assistant", "content": final_reply})
