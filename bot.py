@@ -43,7 +43,7 @@ TOKEN = os.environ.get('TOKEN')
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 PORT = int(os.environ.get('PORT', 8443))
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
-OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY') # പുതിയ OpenRouter Key
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
 MONGO_URI = os.environ.get('MONGO_URI') 
 
 # ✅✅✅ YOUR ID ✅✅✅
@@ -309,7 +309,7 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+            "model": "meta-llama/llama-3.1-8b-instruct:free",
             "messages": [
                 {"role": "system", "content": system_prompt}, 
                 {"role": "user", "content": start_prompt}
@@ -430,7 +430,7 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+            "model": "meta-llama/llama-3.1-8b-instruct:free",
             "messages": [
                 {"role": "system", "content": system_prompt}, 
                 {"role": "user", "content": prompt}
@@ -438,7 +438,10 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         
         response = requests.post(url, headers=headers, json=payload).json()
-        reply_text = response['choices'][0]['message']['content'].strip()
+        if 'choices' in response:
+            reply_text = response['choices'][0]['message']['content'].strip()
+        else:
+            reply_text = "Let's just look at the stars instead... ✨"
         final_reply = add_emojis_balanced(reply_text)
         await query.message.edit_text(final_reply, parse_mode='Markdown')
     except Exception as e: 
@@ -531,7 +534,6 @@ async def allow_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if establish_db_connection(): db_collection_users.update_one({'user_id': user_id}, {'$set': {'allow_media': True}})
     await update.message.reply_text("Media enabled! 🥵")
 
-
 # 🌟 ChatLog function
 async def ChatLog(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text, bot_reply, char_name, nsfw_status):
     user = update.effective_user
@@ -541,7 +543,6 @@ async def ChatLog(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text,
             await context.bot.send_message(ADMIN_TELEGRAM_ID, log_msg, parse_mode='Markdown')
     except Exception as e:
         logger.error(f"Error sending chat log to Admin: {e}")
-
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -781,7 +782,7 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+            "model": "meta-llama/llama-3.1-8b-instruct:free",
             "messages": chat_history[user_id]
         }
         
