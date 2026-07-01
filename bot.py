@@ -16,9 +16,8 @@ from telegram.error import Forbidden, BadRequest
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup 
 from datetime import datetime, timedelta, timezone, time
 
-# ***********************************
-# WARNING: YOU MUST INSTALL pymongo AND pytz
-# ***********************************
+import admin # അഡ്മിൻ ഫയൽ ലിങ്ക് ചെയ്യുന്നു
+
 try:
     from pymongo import MongoClient
     from pymongo.errors import ConnectionFailure, OperationFailure
@@ -56,7 +55,6 @@ ELEVEN_API_KEY = "sk_2b615fe071528fb5696ff8a1d407ab367611caa5543482bd"
 KIE_API_TOKEN = os.environ.get('KIE_API_TOKEN', "9fd5e7779094f8ca2d8da1da95e79443")
 UPI_ID = "abhiixz@ybl"
 
-# 👇 AI STUDIO PRICING
 PRICE = {
     "txt2vid": 30,
     "img2vid": 40,
@@ -66,7 +64,6 @@ PRICE = {
     "imagine": 5
 }
 
-# 👇 2. വോയിസ് ഉള്ളവരുടെ ലിസ്റ്റ്
 VOICE_MAP = {
     "jungkook": "GwAdAVChnhsZg6JKQQUy",
     "jk": "GwAdAVChnhsZg6JKQQUy",
@@ -76,40 +73,14 @@ VOICE_MAP = {
     "tae": "M3gJBS8OofDJfycyA2Ip",
 }
 
-# 👇 3. വോയിസ് ചോദിക്കാൻ ഉപയോഗിക്കുന്ന വാക്കുകൾ
 VOICE_TRIGGERS = ["voice", "speak", "audio", "say something", "ശബ്ദം", "സംസാരിക്ക്", "വോയിസ്", "sound"]
 
-# ------------------------------------------------------------------
-# 🎮 TRUTH OR DARE LISTS
-# ------------------------------------------------------------------
-TRUTH_QUESTIONS = [
-    "What is the first thing you noticed about me? 🙈",
-    "Have you ever dreamt about us? 💭",
-    "What's your favorite song of mine? 🎶",
-    "If we went on a date right now, where would you take me? 🍷",
-    "What is a secret you've never told anyone? 🤫",
-    "Do you get jealous when I look at others? 😏",
-    "What's the craziest thing you've done for love? ❤️"
-]
+TRUTH_QUESTIONS = ["What is the first thing you noticed about me? 🙈", "Have you ever dreamt about us? 💭", "What's your favorite song of mine? 🎶", "If we went on a date right now, where would you take me? 🍷", "What is a secret you've never told anyone? 🤫", "Do you get jealous when I look at others? 😏", "What's the craziest thing you've done for love? ❤️"]
+DARE_CHALLENGES = ["Send a voice note saying 'I Love You'! 🎤", "Send the 3rd photo from your gallery (no cheating)! 📸", "Close your eyes and type 'You are my universe' without mistakes! ✨", "Send a selfie doing a finger heart! 🫰", "Send 10 purple hearts 💜 right now!", "Change your WhatsApp status to my photo for 1 hour! 🤪"]
 
-DARE_CHALLENGES = [
-    "Send a voice note saying 'I Love You'! 🎤",
-    "Send the 3rd photo from your gallery (no cheating)! 📸",
-    "Close your eyes and type 'You are my universe' without mistakes! ✨",
-    "Send a selfie doing a finger heart! 🫰",
-    "Send 10 purple hearts 💜 right now!",
-    "Change your WhatsApp status to my photo for 1 hour! 🤪"
-]
-
-# ------------------------------------------------------------------
-# 🟣 CHARACTER SPECIFIC GIFs & VOICES
-# ------------------------------------------------------------------
 GIFS = {"RM": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jin": { "love": [], "sad": [], "funny": [], "hot": [] }, "Suga": { "love": [], "sad": [], "funny": [], "hot": [] }, "J-Hope": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jimin": { "love": [], "sad": [], "funny": [], "hot": [] }, "V": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jungkook": { "love": [], "sad": [], "funny": [], "hot": [] }, "TaeKook": { "love": [], "sad": [], "funny": [], "hot": [] }}
 VOICES = {"RM": [], "Jin": [], "Suga": [], "J-Hope": [], "Jimin": [], "V": [], "Jungkook": [], "TaeKook": []}
 
-# ------------------------------------------------------------------
-# 📸 FAKE STATUS UPDATES & SCENARIOS
-# ------------------------------------------------------------------
 STATUS_SCENARIOS = [
     {"prompt": "Korean boy gym selfie mirror workout sweat realistic", "caption": "Done with workout. My muscles hurt... massage me? 🥵💪"},
     {"prompt": "Korean boy drinking coffee cafe aesthetic realistic", "caption": "Coffee tastes better when I think of you. ☕️🤎"},
@@ -148,7 +119,6 @@ BTS_PERSONAS = {
     "TaeKook": COMMON_RULES + " You are **TaeKook**. Toxic, Addictive, Possessive, Wild."
 }
 
-# 👇 വോയിസ് ജനറേറ്റ് ചെയ്യാനുള്ള ഫങ്ഷൻ
 def generate_eleven_audio(text, char_name):
     clean_name = char_name.lower() if char_name else ""
     voice_id = VOICE_MAP.get(clean_name)
@@ -165,7 +135,6 @@ def generate_eleven_audio(text, char_name):
     except Exception as e: print(f"Voice Error: {e}")
     return None
 
-# --- DB Setup ---
 db_client = None
 db_collection_users = None
 db_collection_media = None
@@ -173,7 +142,6 @@ db_collection_sent = None
 db_collection_cooldown = None
 DB_NAME = "Taekook_bot" 
 
-# --- Groq AI ---
 groq_client = None
 try:
     if not GROQ_API_KEY: raise ValueError("GROQ_API_KEY is not set.")
@@ -326,8 +294,7 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
     try:
         chat_id = update.effective_chat.id
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
-        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
-        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}], model="llama3-70b-8192")
+        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}], model="llama-3.3-70b-versatile")
         msg = completion.choices[0].message.content.strip()
         final_msg = add_emojis_balanced(msg)
         chat_history[user_id] = [{"role": "system", "content": system_prompt}, {"role": "assistant", "content": final_msg}]
@@ -426,19 +393,14 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(f"✨ **{selected_activity}** with **{selected_char}**...\n\n(Creating moment... 💜)", parse_mode='Markdown')
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive."
-        # 🌟 UPDATED: Model llama-3.1-8b-instant -> llama-3.3-70b-versatile
-        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="llama3-70b-8192")
+        completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}], model="llama-3.3-70b-versatile")
         reply_text = completion.choices[0].message.content.strip()
         final_reply = add_emojis_balanced(reply_text)
         await query.message.edit_text(final_reply, parse_mode='Markdown')
     except Exception: await query.message.edit_text("Let's just look at the stars instead... ✨")
 
-# ---------------------------------------------------------
-# 🛠️ AI STUDIO MENU & STEP-BY-STEP LOGIC (/tool)
-# ---------------------------------------------------------
 
 async def tool_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Clear any previous states
     context.user_data['state'] = None
     user_id = update.effective_user.id
     establish_db_connection()
@@ -473,14 +435,11 @@ async def check_balance_and_proceed(query, user_id, required_credits, tool_name,
     if credits < required_credits:
         await query.message.edit_text(f"❌ **Insufficient Credits!**\n\nYou need {required_credits} credits for {tool_name}.\nYour balance is {credits} credits.\n\nPlease recharge via UPI: `{UPI_ID}`", parse_mode='Markdown', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💰 Recharge Now", callback_data="check_wallet")]]))
         return False
-    # Set the state for step-by-step
     context.user_data['state'] = next_state
     await query.message.edit_text(prompt_text, parse_mode='Markdown')
     return True
 
-# ---------------------------------------------------------
-# 🎨 OLD IMAGINE COMMAND (Replaced by Step-by-Step, but kept for safety)
-# ---------------------------------------------------------
+
 async def imagine_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_query = " ".join(context.args)
     if not user_query: return await update.message.reply_text("What should I search for? (Example: `/imagine Jungkook cute`) 💜")
@@ -527,140 +486,33 @@ async def allow_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if establish_db_connection(): db_collection_users.update_one({'user_id': user_id}, {'$set': {'allow_media': True}})
     await update.message.reply_text("Media enabled! 🥵")
 
-async def user_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message if update.message else update.callback_query.message
-    if update.effective_user.id != ADMIN_TELEGRAM_ID: return await message.reply_text("Admin only!")
-    if establish_db_connection():
-        total_count = db_collection_users.count_documents({})
-        one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
-        active_today = db_collection_users.count_documents({'last_seen': {'$gte': one_day_ago}})
-        inactive_users = total_count - active_today
-    stats_text = f"📊 **User Statistics**\n\n👥 **Total Users:** {total_count}\n🟢 **Active Today:** {active_today}\n💀 **Inactive/Old:** {inactive_users}"
-    if update.callback_query:
-        await update.callback_query.answer()
-        await update.callback_query.message.edit_text(stats_text, parse_mode='Markdown')
-    else: await message.reply_text(stats_text, parse_mode='Markdown')
 
-async def send_new_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id 
-    current_time = datetime.now(timezone.utc)
-    message_obj = update.message if update.message else update.callback_query.message
-    if not establish_db_connection(): return await message_obj.reply_text("DB Error.")
-    user_doc = db_collection_users.find_one({'user_id': user_id})
-    if user_doc and user_doc.get('allow_media') is False: return await message_obj.reply_text("Media disabled.")
-    cooldown_doc = db_collection_cooldown.find_one({'user_id': user_id})
-    if cooldown_doc:
-        elapsed = current_time - cooldown_doc['last_command_time'].replace(tzinfo=timezone.utc)
-        if elapsed.total_seconds() < COOLDOWN_TIME_SECONDS: return await message_obj.reply_text("Wait a bit, darling. 😉")
-    await message_obj.reply_text("Searching... 😉")
-    try:
-        random_media = db_collection_media.aggregate([{'$sample': {'size': 1}}])
-        result = next(random_media, None)
-        if result:
-            caption = "Just for you. 💜"
-            if result['file_type'] == 'photo': msg = await message_obj.reply_photo(result['file_id'], caption=caption, has_spoiler=True, protect_content=True)
-            else: msg = await message_obj.reply_video(result['file_id'], caption=caption, has_spoiler=True, protect_content=True)
-            db_collection_cooldown.update_one({'user_id': user_id}, {'$set': {'last_command_time': current_time}}, upsert=True)
-            db_collection_sent.insert_one({'chat_id': message_obj.chat_id, 'message_id': msg.message_id, 'sent_at': current_time})
-        else: await message_obj.reply_text("No media found.")
-    except Exception: await message_obj.reply_text("Error sending media.")
-
-async def send_fake_status(context: ContextTypes.DEFAULT_TYPE):
-    if not establish_db_connection(): return
-    scenario = random.choice(STATUS_SCENARIOS)
-    encoded_prompt = urllib.parse.quote(scenario['prompt'])
-    seed = random.randint(0, 100000)
-    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&seed={seed}&nologo=true"
-    users = db_collection_users.find({}, {'user_id': 1})
-    for user in users:
-        try: await context.bot.send_photo(chat_id=user['user_id'], photo=image_url, caption=f"📸 **New Status Update:**\n\n{scenario['caption']}", parse_mode='Markdown')
-        except Exception: pass
-
-async def force_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
-    await update.message.reply_text("🚀 Forcing Status Update...")
-    await send_fake_status(context)
-
-async def run_hourly_cleanup(application: Application):
-    await asyncio.sleep(300) 
-    while True:
-        await asyncio.sleep(3600) 
-        if not establish_db_connection(): continue
-        time_limit = datetime.now(timezone.utc) - timedelta(hours=MEDIA_LIFETIME_HOURS)
-        try:
-            msgs = list(db_collection_sent.find({'sent_at': {'$lt': time_limit}}))
-            for doc in msgs:
-                try: await application.bot.delete_message(chat_id=doc['chat_id'], message_id=doc['message_id'])
-                except Exception: pass
-                db_collection_sent.delete_one({'_id': doc['_id']})
-        except Exception: pass
-
-async def delete_old_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
-    if not establish_db_connection(): return
-    time_limit = datetime.now(timezone.utc) - timedelta(hours=MEDIA_LIFETIME_HOURS)
-    msgs = list(db_collection_sent.find({'sent_at': {'$lt': time_limit}}))
-    for doc in msgs:
-        try: await context.bot.delete_message(chat_id=doc['chat_id'], message_id=doc['message_id'])
-        except Exception: pass
-        db_collection_sent.delete_one({'_id': doc['_id']})
-    await update.effective_message.reply_text(f"Deleted {len(msgs)} messages.")
-
-async def clear_deleted_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
-    await update.effective_message.reply_text("Cleaning up...")
-    if not establish_db_connection(): return
-    all_media = list(db_collection_media.find({}))
-    deleted = 0
-    for doc in all_media:
-        try:
-            if doc['file_type'] == 'photo': msg = await context.bot.send_photo(ADMIN_TELEGRAM_ID, doc['file_id'], disable_notification=True)
-            else: msg = await context.bot.send_video(ADMIN_TELEGRAM_ID, doc['file_id'], disable_notification=True)
-            await context.bot.delete_message(ADMIN_TELEGRAM_ID, msg.message_id)
-        except BadRequest:
-            db_collection_media.delete_one({'_id': doc['_id']})
-            deleted += 1
-        except Exception: pass
-        await asyncio.sleep(0.1)
-    await update.effective_message.reply_text(f"Removed {deleted} invalid files.")
-
-async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.id != ADMIN_TELEGRAM_ID: return
-    keyboard = [
-        [InlineKeyboardButton("Users 👥", callback_data='admin_users'), InlineKeyboardButton("New Photo 📸", callback_data='admin_new_photo')],
-        [InlineKeyboardButton("Broadcast 📣", callback_data='admin_broadcast_text'), InlineKeyboardButton("Test Wish ☀️", callback_data='admin_test_wish')],
-        [InlineKeyboardButton("Clean Media 🧹", callback_data='admin_clearmedia'), InlineKeyboardButton("Delete Old 🗑️", callback_data='admin_delete_old')],
-        [InlineKeyboardButton("How to use File ID? 🆔", callback_data='admin_help_id')]
-    ]
-    await update.message.reply_text("👑 **Super Admin Panel:**\nSelect an option below:", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
-# 🌟 ChatLog function to forward logs to Admin
+# 🌟 ChatLog function
 async def ChatLog(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text, bot_reply, char_name, nsfw_status):
     user = update.effective_user
     log_msg = f"👤 User: {user.first_name} ID: `{user.id}`\n🔥 NSFW: {nsfw_status}\n💬 Msg: {user_text}\n🤖 Bot: {bot_reply}\n🎭 Char: {char_name}"
     try:
-        # Check if the user is the admin to avoid double logging
         if user.id != ADMIN_TELEGRAM_ID:
             await context.bot.send_message(ADMIN_TELEGRAM_ID, log_msg, parse_mode='Markdown')
     except Exception as e:
         logger.error(f"Error sending chat log to Admin: {e}")
 
-# ------------------------------------------------------------------
-# MAIN BUTTON HANDLER (Integrated with Step-by-Step Logic)
-# ------------------------------------------------------------------
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     data = query.data
 
-    # UI Routing
+    # Admin ഫയലിലേക്കുള്ള ലിങ്ക്
+    if data.startswith("admin_"):
+        return await admin.admin_button_callback(update, context)
+
     if data == "open_tools": 
         context.user_data['state'] = None
-        await tool_main_menu(update, context)
+        await tool_menu_command(update, context) # Changed to tool_menu_command
         return
     if data.startswith("cat_"): return await sub_menu_handler(update, context)
     
-    # Wallet
     if data == "check_wallet":
         establish_db_connection()
         user_doc = db_collection_users.find_one({'user_id': user_id})
@@ -669,7 +521,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="open_tools")]]), parse_mode='Markdown')
         return
 
-    # STEP-BY-STEP TOOL CLICKS
     if data == "tool_txt2vid":
         await check_balance_and_proceed(query, user_id, PRICE['txt2vid'], "Text to Video", "WAITING_FOR_TXT2VID_PROMPT", "📝 **Text to Video**\n\nPlease type the description (prompt) of the video you want to generate. 🎬", context)
         return
@@ -686,7 +537,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await check_balance_and_proceed(query, user_id, PRICE['imagine'], "Imagine", "WAITING_FOR_IMAGINE_PROMPT", "✨ **AI Imagine**\n\nPlease type the description of the image you want to create! 🎨", context)
         return
 
-    # Old Callbacks
     if data == "settings_menu": return await settings_command(update, context)
     if data == "toggle_nsfw": return await toggle_nsfw_handler(update, context)
     if data == "close_settings" or data == "close_menu": return await query.message.delete()
@@ -701,99 +551,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("date_"): return await date_handler(update, context)
     if data == "regen_msg": return await regenerate_message(update, context)
     if query.from_user.id != ADMIN_TELEGRAM_ID: return await query.answer()
-    
-    # Admin Callbacks
-    if data == 'admin_users': await user_count(update, context)
-    elif data == 'admin_new_photo': await send_new_photo(update, context)
-    elif data == 'admin_clearmedia': await clear_deleted_media(update, context)
-    elif data == 'admin_delete_old': await delete_old_media(update, context)
-    elif data == 'admin_broadcast_text': await context.bot.send_message(query.from_user.id, "📢 To Broadcast: Type `/broadcast Your Message`")
-    elif data == 'admin_test_wish': await send_morning_wish(context)
-    elif data == 'admin_help_id': await context.bot.send_message(query.from_user.id, "🆔 Send any file to get File ID.")
 
-async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
-    reply = update.message.reply_to_message
-    media_file_id = None
-    is_video = False
-    if reply:
-        if reply.photo: media_file_id = reply.photo[-1].file_id
-        elif reply.video: media_file_id = reply.video.file_id; is_video = True
-    raw_text = update.effective_message.text.replace('/broadcast', '').strip()
-    if not media_file_id and not raw_text: return await update.effective_message.reply_text("❌ **Usage:**\nType `/broadcast Message`")
-    msg_or_caption = raw_text if raw_text else "Special Update! 💜"
-    reply_markup = None
-    if "|" in raw_text:
-        parts = raw_text.split("|")
-        msg_or_caption = parts[0].strip()
-        if len(parts) > 1 and "http" in parts[1]:
-            try:
-                btn_txt, btn_url = parts[1].strip().split("-", 1)
-                reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(btn_txt.strip(), url=btn_url.strip())]])
-            except: pass
-    async def send_to_user(uid):
-        try:
-            if media_file_id:
-                if is_video: await context.bot.send_video(uid, media_file_id, caption=msg_or_caption, reply_markup=reply_markup, parse_mode='Markdown', protect_content=True)
-                else: await context.bot.send_photo(uid, media_file_id, caption=msg_or_caption, reply_markup=reply_markup, parse_mode='Markdown', protect_content=True)
-            else: await context.bot.send_message(uid, f"📢 **Update:**\n\n{msg_or_caption}", reply_markup=reply_markup, parse_mode='Markdown')
-            return True
-        except: return False
-
-    if establish_db_connection():
-        users = [d['user_id'] for d in db_collection_users.find({}, {'user_id': 1})]
-        total_users = len(users)
-        status_msg = await update.effective_message.reply_text(f"🚀 **Starting Broadcast to {total_users} users...**", parse_mode='Markdown')
-        sent_count = 0
-        batch_size = 20 
-        for i in range(0, total_users, batch_size):
-            batch = users[i:i + batch_size]
-            tasks = [send_to_user(uid) for uid in batch]
-            results = await asyncio.gather(*tasks)
-            sent_count += results.count(True)
-            if i % 100 == 0:
-                try: await status_msg.edit_text(f"🚀 Sending... {sent_count}/{total_users}")
-                except: pass
-            await asyncio.sleep(1.5)
-        await status_msg.edit_text(f"✅ **Broadcast Complete!**\nSent to: {sent_count}\nFailed/Blocked: {total_users - sent_count}", parse_mode='Markdown')
-
-async def get_media_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.id == ADMIN_TELEGRAM_ID:
-        file_id, media_type = None, "Unknown"
-        if update.message.animation: file_id, media_type = update.message.animation.file_id, "GIF"
-        elif update.message.video: file_id, media_type = update.message.video.file_id, "Video"
-        elif update.message.sticker: file_id, media_type = update.message.sticker.file_id, "Sticker"
-        elif update.message.photo: file_id, media_type = update.message.photo[-1].file_id, "Photo"
-        elif update.message.voice: file_id, media_type = update.message.voice.file_id, "Voice Note"
-        if file_id: await update.message.reply_text(f"🆔 **{media_type} ID:**\n`{file_id}`\n\n(Click to Copy)")
-
-async def send_morning_wish(context: ContextTypes.DEFAULT_TYPE):
-    if establish_db_connection():
-        for user in db_collection_users.find({}, {'user_id': 1}):
-            try: await context.bot.send_message(user['user_id'], "Good Morning, **My Love**! ☀️❤️ Have a beautiful day!", parse_mode='Markdown')
-            except: pass
-
-async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
-    if not establish_db_connection(): return
-    threshold_time = datetime.now(timezone.utc) - timedelta(hours=24)
-    users = db_collection_users.find({'last_seen': {'$lt': threshold_time}, 'notified_24h': {'$ne': True}})
-    for user in users:
-        try:
-            sys_prompt = BTS_PERSONAS.get(user.get('character', 'TaeKook'), BTS_PERSONAS["TaeKook"])
-            completion = groq_client.chat.completions.create(messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}], model="llama3-70b-8192")
-            await context.bot.send_message(user['user_id'], completion.choices[0].message.content.strip(), parse_mode='Markdown')
-            db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
-        except: pass
-
-# ------------------------------------------------------------------
-# 🌟 MASTER MESSAGE HANDLER (Chat, Step-by-Step, Feedback, Media)
-# ------------------------------------------------------------------
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_text = update.message.text 
     state = context.user_data.get('state')
 
-    # 1. Feedback Mode
     if context.user_data.get('waiting_for_feedback'):
         try:
             await context.bot.send_message(ADMIN_TELEGRAM_ID, text=f"📩 **FEEDBACK RECEIVED:**\n👤 From: {update.effective_user.first_name} (`{user_id}`)\n💬: {user_text}", parse_mode='Markdown')
@@ -802,12 +565,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['waiting_for_feedback'] = False 
         return
 
-    # 2. STEP-BY-STEP TOOL TEXT INPUTS
     if state == "WAITING_FOR_TXT2VID_PROMPT":
         await update.message.reply_text(f"🎬 Creating video for: '{user_text}'... (Consuming {PRICE['txt2vid']} credits)")
         db_collection_users.update_one({'user_id': user_id}, {'$inc': {'credits': -PRICE['txt2vid']}})
         context.user_data['state'] = None
-        # Here you will add the actual API call logic for Kie.ai Text to Video
         await asyncio.sleep(2)
         await update.message.reply_text("✅ Video request sent! (Placeholder for actual API integration)")
         return
@@ -824,12 +585,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"🎨 Generating image for: '{user_text}'... (Consuming {PRICE['imagine']} credits)")
         db_collection_users.update_one({'user_id': user_id}, {'$inc': {'credits': -PRICE['imagine']}})
         context.user_data['state'] = None
-        # Fallback quick generation using pollination
         image_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(user_text)}?nologo=true"
         await update.message.reply_photo(image_url, caption=f"✨ `{user_text}`")
         return
 
-    # 3. Normal Roleplay Logic
     if establish_db_connection(): db_collection_users.update_one({'user_id': user_id}, {'$set': {'last_seen': datetime.now(timezone.utc), 'notified_24h': False}}, upsert=True)
     if user_id in current_scenario and current_scenario[user_id] == "WAITING_FOR_PLOT":
         current_scenario[user_id] = user_text 
@@ -839,12 +598,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_user_message[user_id] = user_text 
     await generate_ai_response(update, context, user_text, is_regenerate=False)
 
-# 📸 MASTER MEDIA HANDLER (Screenshots, Tool Inputs, Voice, Vision)
 async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     state = context.user_data.get('state')
 
-    # 1. Payment Screenshot Check (Only if NO state is active)
     if update.message.photo and user.id != ADMIN_TELEGRAM_ID and not state:
         try:
             await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
@@ -854,7 +611,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             logger.error(f"Error forwarding payment screenshot: {e}")
         return
 
-    # 2. STEP-BY-STEP IMAGE INPUTS
     if state == "WAITING_FOR_IMG2VID_IMAGE" and update.message.photo:
         context.user_data['img2vid_file'] = update.message.photo[-1].file_id
         context.user_data['state'] = "WAITING_FOR_IMG2VID_PROMPT"
@@ -883,10 +639,8 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text("✅ Upscale task created! (Placeholder)")
         return
 
-    # 3. Old Voice / Vision Forwarding Logic
     if user.id == ADMIN_TELEGRAM_ID: return
     try:
-        # Forward incoming media to the admin
         if user.id != ADMIN_TELEGRAM_ID:
             await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
 
@@ -907,7 +661,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             caption = update.message.caption if update.message.caption else ""
             system_instruction = f"[SYSTEM: The user sent a PHOTO. ROLEPLAY that you see it. User's caption: '{caption}']"
         
-        # Additional Media handling
         if update.message.video:
              caption = update.message.caption if update.message.caption else ""
              system_instruction = f"[SYSTEM: The user sent a VIDEO. ROLEPLAY that you see it. User's caption: '{caption}']"
@@ -921,7 +674,7 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
     if not is_regenerate: await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
     system_prompt, selected_char, final_name = "", "TaeKook", "TaeKook"
-    nsfw_enabled = False # Initialize nsfw_enabled
+    nsfw_enabled = False 
 
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
@@ -961,13 +714,12 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
         else: chat_history[user_id][0]['content'] = system_prompt
         
         words = user_text.split()
-        # Create a copy of the text for logging to not show internal system instructions
         display_text = user_text.split("[SYSTEM:")[0].strip()
 
         if len(words) < 4 and user_text.lower() not in ["hi", "hello"] and "?" not in user_text: user_text += " [SYSTEM: User sent a short text. Tease her.]"
         if not is_regenerate: chat_history[user_id].append({"role": "user", "content": user_text})
         
-        completion = groq_client.chat.completions.create(messages=chat_history[user_id], model="llama3-70b-8192")
+        completion = groq_client.chat.completions.create(messages=chat_history[user_id], model="llama-3.3-70b-versatile")
         reply_text = completion.choices[0].message.content.strip()
         final_reply = add_emojis_balanced(reply_text)
         chat_history[user_id].append({"role": "assistant", "content": final_reply})
@@ -984,51 +736,12 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
                 else: await update.effective_message.reply_text("⚠️ Voice Failed!")
             except: pass
 
-        # Send Chat Log to Admin
         nsfw_log_status = "🔞 ON" if nsfw_enabled else "🟢 OFF"
-        # user_text should have [SYSTEM: part removed for logging
         await ChatLog(update, context, display_text, final_reply, final_name, nsfw_log_status)
 
     except Exception as e:
         logger.error(f"Groq Error: {e}")
         await update.effective_message.reply_text("I'm a bit dizzy... tell me again? 😵‍💫")
-
-async def test_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
-    reply = update.message.reply_to_message
-    media_file_id, is_video = None, False
-    if reply:
-        if reply.photo: media_file_id = reply.photo[-1].file_id
-        elif reply.video: media_file_id, is_video = reply.video.file_id, True
-    raw_text = update.message.text.replace('/test', '').strip()
-    if not media_file_id and not raw_text: return await update.message.reply_text("⚠️ Usage: `/test Message | Button-Link`")
-    msg_or_caption = raw_text if raw_text else "Test Caption 💜"
-    reply_markup = None
-    if "|" in raw_text:
-        parts = raw_text.split("|")
-        msg_or_caption = parts[0].strip()
-        if len(parts) > 1 and "-" in parts[1]:
-            try:
-                btn_txt, btn_url = parts[1].strip().split("-", 1)
-                reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(btn_txt.strip(), url=btn_url.strip())]])
-            except: pass
-    try:
-        final_msg = f"📢 **TEST PREVIEW**\n━━━━━━━━━━\n{msg_or_caption}\n━━━━━━━━━━"
-        if media_file_id:
-            if is_video: await context.bot.send_video(ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
-            else: await context.bot.send_photo(ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
-        else: await context.bot.send_message(ADMIN_TELEGRAM_ID, final_msg, reply_markup=reply_markup, parse_mode='Markdown')
-        await update.message.reply_text("✅ Test Sent!")
-    except Exception as e: await update.message.reply_text(f"❌ Error: {e}")
-
-async def admin_add_credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
-    try:
-        uid, amt = int(context.args[0]), int(context.args[1])
-        db_collection_users.update_one({'user_id': uid}, {'$inc': {'credits': amt}}, upsert=True)
-        await update.message.reply_text(f"✅ Added {amt} to {uid}")
-        await context.bot.send_message(uid, f"🎉 **Recharge Done!**\n`{amt}` credits added to your wallet. Enjoy! 💜")
-    except: await update.message.reply_text("Usage: `/add [UserID] [Amount]`")
 
 async def post_init(application: Application):
     await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted & Updated!** 🚀\nUltimate AI Studio is Live.", parse_mode='Markdown')
@@ -1045,10 +758,12 @@ async def post_init(application: Application):
     ]
     await application.bot.set_my_commands(commands)
     ist = pytz.timezone('Asia/Kolkata')
+    
+    # അഡ്മിൻ ഫയലിൽ നിന്നുള്ള ടാസ്ക്കുകൾ
     if application.job_queue:
-        application.job_queue.run_daily(send_fake_status, time=time(hour=10, minute=0, tzinfo=ist))
-        application.job_queue.run_repeating(check_inactivity, interval=3600, first=60)
-    if ADMIN_TELEGRAM_ID: application.create_task(run_hourly_cleanup(application))
+        application.job_queue.run_daily(admin.send_fake_status, time=time(hour=10, minute=0, tzinfo=ist))
+        application.job_queue.run_repeating(admin.check_inactivity, interval=3600, first=60)
+    if ADMIN_TELEGRAM_ID: application.create_task(admin.run_hourly_cleanup(application))
 
 def main():
     if not all([TOKEN, WEBHOOK_URL, GROQ_API_KEY]):
@@ -1058,48 +773,41 @@ def main():
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("tool", tool_menu_command))
-    application.add_handler(CommandHandler("add", admin_add_credits))
     application.add_handler(CommandHandler("settings", settings_command))
-    application.add_handler(CommandHandler("users", user_count))
-    application.add_handler(CommandHandler("user", user_count))
-    # Add CommandHandler for testwish as it was used but not defined
-    application.add_handler(CommandHandler("testwish", send_morning_wish)) 
-    application.add_handler(CommandHandler("broadcast", broadcast_message)) 
-    application.add_handler(CommandHandler("test", test_broadcast))
-    application.add_handler(CommandHandler("forcestatus", force_status))
-    application.add_handler(CommandHandler("new", send_new_photo)) 
     application.add_handler(CommandHandler("game", start_game)) 
     application.add_handler(CommandHandler("date", start_date))
     application.add_handler(CommandHandler("imagine", imagine_command))
     application.add_handler(CommandHandler("setme", set_persona_command))
     application.add_handler(CommandHandler("create", create_character_command))
-    application.add_handler(CommandHandler("delete_old_media", delete_old_media)) 
-    application.add_handler(CommandHandler("clearmedia", clear_deleted_media))
-    application.add_handler(CommandHandler("admin", admin_menu))
     application.add_handler(CommandHandler("stopmedia", stop_media))
     application.add_handler(CommandHandler("allowmedia", allow_media))
     application.add_handler(CommandHandler("character", switch_character))
     application.add_handler(CommandHandler("switch", switch_character)) 
 
+    # അഡ്മിൻ ഫയലിൽ നിന്നുള്ള കമാൻഡുകൾ
+    application.add_handler(CommandHandler("add", admin.admin_add_credits))
+    application.add_handler(CommandHandler("users", admin.user_count))
+    application.add_handler(CommandHandler("user", admin.user_count))
+    application.add_handler(CommandHandler("testwish", admin.send_morning_wish)) 
+    application.add_handler(CommandHandler("broadcast", admin.broadcast_message)) 
+    application.add_handler(CommandHandler("test", admin.test_broadcast))
+    application.add_handler(CommandHandler("forcestatus", admin.force_status))
+    application.add_handler(CommandHandler("new", admin.send_new_photo)) 
+    application.add_handler(CommandHandler("delete_old_media", admin.delete_old_media)) 
+    application.add_handler(CommandHandler("clearmedia", admin.clear_deleted_media))
+    application.add_handler(CommandHandler("admin", admin.admin_menu))
+
     application.add_handler(CallbackQueryHandler(button_handler))
-    # This might capture media forwarding if not careful, should check ChatType
-    # Add filters.ChatType.PRIVATE to make sure it's only private chats to forward ID
-    application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & (filters.ANIMATION | filters.VIDEO | filters.Sticker.ALL | filters.PHOTO | filters.VOICE) & filters.ChatType.PRIVATE, get_media_id))
-    # It was (filters.PHOTO), changed to include video. And filter by channel. This seems to be for media collection from channel. 
+    application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & ~filters.COMMAND & filters.ChatType.PRIVATE, admin.get_media_id))
     application.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST & (filters.PHOTO | filters.VIDEO), channel_message_handler))
     
-    # 🌟 MASTER HANDLERS FOR CHAT, TOOL INPUTS, AND MEDIA 🌟
-    # MessageHandler with group=1 for media handling (photos, videos, voice) for Kie AI inputs and payment screenshots
     application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO, handle_incoming_media), group=1)
-    # Default message handler for text messages
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
 
     logger.info(f"Starting webhook on port {PORT}")
-    # Run the bot with webhook
     application.run_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=f"{WEBHOOK_URL}/{TOKEN}")
 
 if __name__ == '__main__':
-    # Add a sanity check to see if ADMIN_TELEGRAM_ID is valid
     if ADMIN_TELEGRAM_ID == 0:
         logger.error("ADMIN_TELEGRAM_ID must be a real telegram user ID.")
     else:
