@@ -1084,7 +1084,7 @@ def main():
     application.add_handler(CallbackQueryHandler(button_handler))
     # This might capture media forwarding if not careful, should check ChatType
     # Add filters.ChatType.PRIVATE to make sure it's only private chats to forward ID
-    application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & ~filters.COMMAND & filters.ChatType.PRIVATE, get_media_id))
+    application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & (filters.ANIMATION | filters.VIDEO | filters.Sticker.ALL | filters.PHOTO | filters.VOICE) & filters.ChatType.PRIVATE, get_media_id))
     # It was (filters.PHOTO), changed to include video. And filter by channel. This seems to be for media collection from channel. 
     application.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST & (filters.PHOTO | filters.VIDEO), channel_message_handler))
     
