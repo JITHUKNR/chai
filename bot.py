@@ -309,7 +309,7 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+            "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
             "messages": [
                 {"role": "system", "content": system_prompt}, 
                 {"role": "user", "content": start_prompt}
@@ -425,7 +425,7 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+            "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
             "messages": [
                 {"role": "system", "content": system_prompt}, 
                 {"role": "user", "content": prompt}
@@ -776,7 +776,7 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+            "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
             "messages": chat_history[user_id]
         }
         
