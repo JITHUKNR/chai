@@ -221,14 +221,9 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
             if 'choices' in response:
                 reply_text = response['choices'][0]['message']['content'].strip()
                 await context.bot.send_message(user['user_id'], reply_text, parse_mode='Markdown')
-                bot.db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
+                db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
             else:
                 logger.error(f"OpenRouter Error: {response}")
-            
-            await context.bot.send_message(user['user_id'], reply_text, parse_mode='Markdown')
-            bot.db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
-        except Exception as e: 
-            logger.error(f"Inactivity Check Error: {e}")
 
 async def test_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != bot.ADMIN_TELEGRAM_ID: return
