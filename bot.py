@@ -1098,7 +1098,7 @@ def main():
 
     logger.info(f"Starting webhook on port {PORT}")
     # Run the bot with webhook
-    application.run_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=f"{WEBHOOK_URL}/{TOKEN}")
+    application.run_webhook(host="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=f"{WEBHOOK_URL}/{TOKEN}")
 
 if __name__ == '__main__':
     # Add a sanity check to see if ADMIN_TELEGRAM_ID is valid
