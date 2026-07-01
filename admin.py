@@ -208,11 +208,11 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
 
     for user in users:
         try:
-            sys_prompt = bot.BTS_PERSONAS.get(user.get('character', 'TaeKook'), bot.BTS_PERSONAS["TaeKook"])
+            sys_prompt = bot.BTS_PERSONAS.get(user.get('character', 'TaeKook'), bot.BTS_PERSONAS['TaeKook'])
             payload = {
                 "model": "nousresearch/hermes-3-llama-3.1-405b:free",
                 "messages": [
-                    {"role": "system", "content": sys_prompt}, 
+                    {"role": "system", "content": sys_prompt},
                     {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}
                 ]
             }
@@ -221,12 +221,14 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
             if 'choices' in response:
                 reply_text = response['choices'][0]['message']['content'].strip()
                 await context.bot.send_message(user['user_id'], reply_text, parse_mode='Markdown')
-                db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
+                bot.db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
             else:
                 logger.error(f"OpenRouter Error: {response}")
+        except Exception as e:
+            logger.error(f"Inactivity Check Error: {e}")
 
 async def test_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
+    if update.effective_user.id != bot.ADMIN_TELEGRAM_ID: return
     try:
         reply = update.message.reply_to_message
         media_file_id, is_video = None, False
@@ -247,9 +249,9 @@ async def test_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 except: pass
         final_msg = f"📢 **TEST PREVIEW**\n━━━━━━━━━━\n{msg_or_caption}\n━━━━━━━━━━"
         if media_file_id:
-            if is_video: await context.bot.send_video(ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
-            else: await context.bot.send_photo(ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
-        else: await context.bot.send_message(ADMIN_TELEGRAM_ID, final_msg, reply_markup=reply_markup, parse_mode='Markdown')
+            if is_video: await context.bot.send_video(bot.ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
+            else: await context.bot.send_photo(bot.ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
+        else: await context.bot.send_message(bot.ADMIN_TELEGRAM_ID, final_msg, reply_markup=reply_markup, parse_mode='Markdown')
         await update.message.reply_text("✅ Test Sent!")
     except Exception as e: await update.message.reply_text(f"❌ Error: {e}")
 
