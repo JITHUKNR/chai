@@ -226,30 +226,30 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
                 logger.error(f"OpenRouter Error: {response}")
 
 async def test_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != bot.ADMIN_TELEGRAM_ID: return
-    reply = update.message.reply_to_message
-    media_file_id, is_video = None, False
-    if reply:
-        if reply.photo: media_file_id = reply.photo[-1].file_id
-        elif reply.video: media_file_id, is_video = reply.video.file_id, True
-    raw_text = update.message.text.replace('/test', '').strip()
-    if not media_file_id and not raw_text: return await update.message.reply_text("⚠️ Usage: `/test Message | Button-Link`")
-    msg_or_caption = raw_text if raw_text else "Test Caption 💜"
-    reply_markup = None
-    if "|" in raw_text:
-        parts = raw_text.split("|")
-        msg_or_caption = parts[0].strip()
-        if len(parts) > 1 and "-" in parts[1]:
-            try:
-                btn_txt, btn_url = parts[1].strip().split("-", 1)
-                reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(btn_txt.strip(), url=btn_url.strip())]])
-            except: pass
+    if update.effective_user.id != ADMIN_TELEGRAM_ID: return
     try:
+        reply = update.message.reply_to_message
+        media_file_id, is_video = None, False
+        if reply:
+            if reply.photo: media_file_id = reply.photo[-1].file_id
+            elif reply.video: media_file_id, is_video = reply.video.file_id, True
+        raw_text = update.message.text.replace('/test', '').strip()
+        if not media_file_id and not raw_text: return await update.message.reply_text("⚠️ Usage: `/test Message | Button-Link`")
+        msg_or_caption = raw_text if raw_text else "Test Caption 💜"
+        reply_markup = None
+        if "|" in raw_text:
+            parts = raw_text.split("|")
+            msg_or_caption = parts[0].strip()
+            if len(parts) > 1 and "-" in parts[1]:
+                try:
+                    btn_txt, btn_url = parts[1].strip().split("-", 1)
+                    reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton(btn_txt.strip(), url=btn_url.strip())]])
+                except: pass
         final_msg = f"📢 **TEST PREVIEW**\n━━━━━━━━━━\n{msg_or_caption}\n━━━━━━━━━━"
         if media_file_id:
-            if is_video: await context.bot.send_video(bot.ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
-            else: await context.bot.send_photo(bot.ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
-        else: await context.bot.send_message(bot.ADMIN_TELEGRAM_ID, final_msg, reply_markup=reply_markup, parse_mode='Markdown')
+            if is_video: await context.bot.send_video(ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
+            else: await context.bot.send_photo(ADMIN_TELEGRAM_ID, media_file_id, caption=final_msg, reply_markup=reply_markup, parse_mode='Markdown')
+        else: await context.bot.send_message(ADMIN_TELEGRAM_ID, final_msg, reply_markup=reply_markup, parse_mode='Markdown')
         await update.message.reply_text("✅ Test Sent!")
     except Exception as e: await update.message.reply_text(f"❌ Error: {e}")
 
