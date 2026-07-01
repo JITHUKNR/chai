@@ -1,6 +1,7 @@
 import asyncio
 import random
 import urllib.parse
+import requests
 from datetime import datetime, timedelta, timezone
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes
@@ -197,13 +198,31 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
     if not bot.establish_db_connection(): return
     threshold_time = datetime.now(timezone.utc) - timedelta(hours=24)
     users = bot.db_collection_users.find({'last_seen': {'$lt': threshold_time}, 'notified_24h': {'$ne': True}})
+    
+    # OpenRouter API Integration for inactivity check
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {bot.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
     for user in users:
         try:
             sys_prompt = bot.BTS_PERSONAS.get(user.get('character', 'TaeKook'), bot.BTS_PERSONAS["TaeKook"])
-            completion = bot.groq_client.chat.completions.create(messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}], model="llama-3.3-70b-versatile")
-            await context.bot.send_message(user['user_id'], completion.choices[0].message.content.strip(), parse_mode='Markdown')
+            payload = {
+                "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+                "messages": [
+                    {"role": "system", "content": sys_prompt}, 
+                    {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}
+                ]
+            }
+            response = requests.post(url, headers=headers, json=payload).json()
+            reply_text = response['choices'][0]['message']['content'].strip()
+            
+            await context.bot.send_message(user['user_id'], reply_text, parse_mode='Markdown')
             bot.db_collection_users.update_one({'_id': user['_id']}, {'$set': {'notified_24h': True}})
-        except: pass
+        except Exception as e: 
+            logger.error(f"Inactivity Check Error: {e}")
 
 async def test_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != bot.ADMIN_TELEGRAM_ID: return
