@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 TOKEN = os.environ.get('TOKEN') 
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 PORT = int(os.environ.get('PORT', 8443))
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') # 🌟 Groq മാറ്റി Gemini ആക്കി
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') # 🌟 Gemini API Key
 MONGO_URI = os.environ.get('MONGO_URI') 
 
 # ✅✅✅ YOUR ID ✅✅✅
@@ -848,7 +848,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_user_message[user_id] = user_text 
     await generate_ai_response(update, context, user_text, is_regenerate=False)
 
-# 📸 MASTER MEDIA HANDLER (Screenshots, Tool Inputs, Voice Disabled)
+# 📸 MASTER MEDIA HANDLER (Screenshots, Tool Inputs, Voice, Vision, Stickers)
 async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     state = context.user_data.get('state')
@@ -897,18 +897,88 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
 
         system_instruction = ""
         
-        # 🎙️ VOICE MESSAGES (Disabled as Groq is removed)
+        # 🎙️ VOICE MESSAGES (Gemini Native API Transcription)
         if update.message.voice or update.message.audio:
-            await update.message.reply_text("⚠️ I can't listen to voice notes right now. Please type it for me! 💜")
-            return
+            status_msg = await update.message.reply_text("🎧 Listening to your voice... 💜")
+            file_id = update.message.voice.file_id if update.message.voice else update.message.audio.file_id
+            mime_type = update.message.voice.mime_type if update.message.voice else update.message.audio.mime_type
+            if not mime_type: mime_type = "audio/ogg"
+
+            new_file = await context.bot.get_file(file_id)
+            audio_bytes = await new_file.download_as_bytearray()
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+            payload = {
+                "contents": [{"parts": [{"text": "Transcribe this audio exactly. Provide only the spoken text."}, {"inline_data": {"mime_type": mime_type, "data": audio_b64}}]}]
+            }
+            response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload).json()
             
+            try:
+                transcription = response['candidates'][0]['content']['parts'][0]['text'].strip()
+                system_instruction = f"[SYSTEM: User sent a VOICE NOTE. They said: '{transcription}'. Reply to them naturally based on this.]"
+            except Exception as e:
+                logger.error(f"Audio transcription failed: {response}")
+                system_instruction = "[SYSTEM: User sent a voice note but I couldn't hear it clearly. Ask them to type or say it again.]"
+            
+            await context.bot.delete_message(chat_id=update.message.chat_id, message_id=status_msg.message_id)
+            
+        # 🖼️ PHOTO (Gemini Native API Vision)
         elif update.message.photo:
+            status_msg = await update.message.reply_text("👀 Looking at your photo... ✨")
+            file_id = update.message.photo[-1].file_id
+            new_file = await context.bot.get_file(file_id)
+            photo_bytes = await new_file.download_as_bytearray()
+            photo_b64 = base64.b64encode(photo_bytes).decode('utf-8')
             caption = update.message.caption if update.message.caption else ""
-            system_instruction = f"[SYSTEM: The user sent a PHOTO. ROLEPLAY that you see it. User's caption: '{caption}']"
+
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+            payload = {
+                "contents": [{"parts": [{"text": f"Describe what is in this image briefly and naturally. The user's caption is: '{caption}'. Focus on the subject, emotion, and setting so a roleplay bot can react to it."}, {"inline_data": {"mime_type": "image/jpeg", "data": photo_b64}}]}]
+            }
+            response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload).json()
+            
+            try:
+                description = response['candidates'][0]['content']['parts'][0]['text'].strip()
+                system_instruction = f"[SYSTEM: The user sent a PHOTO. Image description: '{description}'. User's caption: '{caption}'. ROLEPLAY that you see the photo and react to it.]"
+            except Exception as e:
+                logger.error(f"Image analysis failed: {response}")
+                system_instruction = f"[SYSTEM: The user sent a PHOTO. User's caption: '{caption}'. ROLEPLAY that you see it.]"
+            
+            await context.bot.delete_message(chat_id=update.message.chat_id, message_id=status_msg.message_id)
         
-        if update.message.video:
-             caption = update.message.caption if update.message.caption else ""
-             system_instruction = f"[SYSTEM: The user sent a VIDEO. ROLEPLAY that you see it. User's caption: '{caption}']"
+        # 🎥 VIDEO (Gemini Native API Vision - Limited to 15MB)
+        elif update.message.video:
+            caption = update.message.caption if update.message.caption else ""
+            video = update.message.video
+            if video.file_size and video.file_size < 15 * 1024 * 1024:
+                status_msg = await update.message.reply_text("👀 Watching your video... 🍿")
+                new_file = await context.bot.get_file(video.file_id)
+                video_bytes = await new_file.download_as_bytearray()
+                video_b64 = base64.b64encode(video_bytes).decode('utf-8')
+                mime_type = video.mime_type or "video/mp4"
+
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+                payload = {
+                    "contents": [{"parts": [{"text": f"Describe the main action and subject in this short video. The user's caption is: '{caption}'. Just provide a brief description."}, {"inline_data": {"mime_type": mime_type, "data": video_b64}}]}]
+                }
+                response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload).json()
+                
+                try:
+                    description = response['candidates'][0]['content']['parts'][0]['text'].strip()
+                    system_instruction = f"[SYSTEM: The user sent a VIDEO. Video description: '{description}'. User's caption: '{caption}'. ROLEPLAY that you watched it and react.]"
+                except Exception as e:
+                    logger.error(f"Video analysis failed: {response}")
+                    system_instruction = f"[SYSTEM: The user sent a VIDEO. User's caption: '{caption}'. ROLEPLAY that you see it.]"
+                
+                await context.bot.delete_message(chat_id=update.message.chat_id, message_id=status_msg.message_id)
+            else:
+                system_instruction = f"[SYSTEM: The user sent a large VIDEO. User's caption: '{caption}'. ROLEPLAY that you see it.]"
+                
+        # 🤩 STICKERS (Extract Emoji)
+        elif update.message.sticker:
+            emoji = update.message.sticker.emoji or "a sticker"
+            system_instruction = f"[SYSTEM: The user sent a STICKER representing this emoji: {emoji}. React to it playfully.]"
 
         if system_instruction: await generate_ai_response(update, context, user_text=system_instruction)
     except Exception as e:
@@ -1042,7 +1112,7 @@ async def admin_add_credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except: await update.message.reply_text("Usage: `/add [UserID] [Amount]`")
 
 async def post_init(application: Application):
-    await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted & Updated!** 🚀\nUltimate AI Studio is Live with Gemini 2.5 Flash.", parse_mode='Markdown')
+    await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted & Updated!** 🚀\nUltimate AI Studio is Live with Gemini 2.5 Flash Multimodal.", parse_mode='Markdown')
     commands = [
         BotCommand("start", "🔄 Restart Bot"),
         BotCommand("tool", "🛠️ AI Studio"),
@@ -1098,7 +1168,8 @@ def main():
     application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & ~filters.COMMAND & filters.ChatType.PRIVATE, get_media_id))
     application.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST & (filters.PHOTO | filters.VIDEO), channel_message_handler))
     
-    application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO, handle_incoming_media), group=1)
+    # 🌟 ഇവിടെ filters.Sticker കൂടെ ചേർത്തിട്ടുണ്ട് 🌟
+    application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO | filters.Sticker, handle_incoming_media), group=1)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
 
     logger.info(f"Starting webhook on port {PORT}")
