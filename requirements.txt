@@ -1,6 +1,5 @@
 python-telegram-bot[job-queue,webhooks]
-google-generativeai
+google-genai
 pymongo
 requests
 pytz
-duckduckgo-search
