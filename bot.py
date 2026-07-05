@@ -1089,7 +1089,7 @@ async def admin_add_credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except: await update.message.reply_text("Usage: `/add [UserID] [Amount]`")
 
 async def post_init(application: Application):
-    await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted!** 🚀\nGemini Safety Settings updated to BLOCK_NONE.", parse_mode='Markdown')
+    await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted!** 🚀\nGemini Safety Settings updated to BLOCK NONE.", parse_mode='Markdown')
     commands = [
         BotCommand("start", "🔄 Restart Bot"),
         BotCommand("tool", "🛠️ AI Studio"),
