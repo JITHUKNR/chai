@@ -15,9 +15,6 @@ from telegram.error import Forbidden, BadRequest
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup 
 from datetime import datetime, timedelta, timezone, time
 
-# ***********************************
-# WARNING: YOU MUST INSTALL pymongo AND pytz
-# ***********************************
 try:
     from pymongo import MongoClient
     from pymongo.errors import ConnectionFailure, OperationFailure
@@ -31,31 +28,25 @@ except ImportError:
     OperationFailure = Exception
     logger.error("pymongo library not found.")
 
-# -------------------- കൂൾഡൗൺ സമയം --------------------
 COOLDOWN_TIME_SECONDS = 180 
 MEDIA_LIFETIME_HOURS = 1 
-# --------------------------------------------------------
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Environment Variables ---
 TOKEN = os.environ.get('TOKEN') 
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 PORT = int(os.environ.get('PORT', 8443))
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') # 🌟 Gemini API Key
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') 
 MONGO_URI = os.environ.get('MONGO_URI') 
 
-# ✅✅✅ YOUR ID ✅✅✅
 ADMIN_TELEGRAM_ID = 7567364364 
 ADMIN_CHANNEL_ID = os.environ.get('ADMIN_CHANNEL_ID', '-1002992093797') 
 
-# 👇 1. API Keys & Settings
 ELEVEN_API_KEY = "sk_2b615fe071528fb5696ff8a1d407ab367611caa5543482bd"
 KIE_API_TOKEN = os.environ.get('KIE_API_TOKEN', "9fd5e7779094f8ca2d8da1da95e79443")
 UPI_ID = "abhiixz@ybl"
 
-# 👇 AI STUDIO PRICING
 PRICE = {
     "txt2vid": 30,
     "img2vid": 40,
@@ -65,7 +56,6 @@ PRICE = {
     "imagine": 5
 }
 
-# 👇 2. വോയിസ് ഉള്ളവരുടെ ലിസ്റ്റ്
 VOICE_MAP = {
     "jungkook": "GwAdAVChnhsZg6JKQQUy",
     "jk": "GwAdAVChnhsZg6JKQQUy",
@@ -75,12 +65,8 @@ VOICE_MAP = {
     "tae": "M3gJBS8OofDJfycyA2Ip",
 }
 
-# 👇 3. വോയിസ് ചോദിക്കാൻ ഉപയോഗിക്കുന്ന വാക്കുകൾ
 VOICE_TRIGGERS = ["voice", "speak", "audio", "say something", "ശബ്ദം", "സംസാരിക്ക്", "വോയിസ്", "sound"]
 
-# ------------------------------------------------------------------
-# 🎮 TRUTH OR DARE LISTS
-# ------------------------------------------------------------------
 TRUTH_QUESTIONS = [
     "What is the first thing you noticed about me? 🙈",
     "Have you ever dreamt about us? 💭",
@@ -100,15 +86,9 @@ DARE_CHALLENGES = [
     "Change your WhatsApp status to my photo for 1 hour! 🤪"
 ]
 
-# ------------------------------------------------------------------
-# 🟣 CHARACTER SPECIFIC GIFs & VOICES
-# ------------------------------------------------------------------
 GIFS = {"RM": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jin": { "love": [], "sad": [], "funny": [], "hot": [] }, "Suga": { "love": [], "sad": [], "funny": [], "hot": [] }, "J-Hope": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jimin": { "love": [], "sad": [], "funny": [], "hot": [] }, "V": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jungkook": { "love": [], "sad": [], "funny": [], "hot": [] }, "TaeKook": { "love": [], "sad": [], "funny": [], "hot": [] }}
 VOICES = {"RM": [], "Jin": [], "Suga": [], "J-Hope": [], "Jimin": [], "V": [], "Jungkook": [], "TaeKook": []}
 
-# ------------------------------------------------------------------
-# 📸 FAKE STATUS UPDATES & SCENARIOS
-# ------------------------------------------------------------------
 STATUS_SCENARIOS = [
     {"prompt": "Korean boy gym selfie mirror workout sweat realistic", "caption": "Done with workout. My muscles hurt... massage me? 🥵💪"},
     {"prompt": "Korean boy drinking coffee cafe aesthetic realistic", "caption": "Coffee tastes better when I think of you. ☕️🤎"},
@@ -147,7 +127,14 @@ BTS_PERSONAS = {
     "TaeKook": COMMON_RULES + " You are **TaeKook**. Toxic, Addictive, Possessive, Wild."
 }
 
-# 👇 വോയിസ് ജനറേറ്റ് ചെയ്യാനുള്ള ഫങ്ഷൻ
+# 🌟 SAFETY SETTINGS FOR GEMINI (BLOCK_NONE) 🌟
+GEMINI_SAFETY_SETTINGS = [
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+]
+
 def generate_eleven_audio(text, char_name):
     clean_name = char_name.lower() if char_name else ""
     voice_id = VOICE_MAP.get(clean_name)
@@ -164,7 +151,6 @@ def generate_eleven_audio(text, char_name):
     except Exception as e: print(f"Voice Error: {e}")
     return None
 
-# --- DB Setup ---
 db_client = None
 db_collection_users = None
 db_collection_media = None
@@ -172,7 +158,6 @@ db_collection_sent = None
 db_collection_cooldown = None
 DB_NAME = "Taekook_bot" 
 
-# --- Gemini AI Setup ---
 try:
     if not GEMINI_API_KEY: raise ValueError("GEMINI_API_KEY is not set.")
     chat_history = {} 
@@ -324,14 +309,15 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
         chat_id = update.effective_chat.id
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
         
-        url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-        headers = {"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+        headers = {"Content-Type": "application/json"}
         payload = {
-            "model": "gemini-2.5-flash",
-            "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": start_prompt}]
+            "systemInstruction": {"parts": [{"text": system_prompt}]},
+            "contents": [{"role": "user", "parts": [{"text": start_prompt}]}],
+            "safetySettings": GEMINI_SAFETY_SETTINGS
         }
         response = requests.post(url, headers=headers, json=payload).json()
-        msg = response.get('choices', [{}])[0].get('message', {}).get('content', "Ready! You can start chatting now. 💜").strip()
+        msg = response.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "Ready! You can start chatting now. 💜").strip()
         
         final_msg = add_emojis_balanced(msg)
         chat_history[user_id] = [{"role": "system", "content": system_prompt}, {"role": "assistant", "content": final_msg}]
@@ -430,21 +416,18 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(f"✨ **{selected_activity}** with **{selected_char}**...\n\n(Creating moment... 💜)", parse_mode='Markdown')
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive."
-        url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-        headers = {"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+        headers = {"Content-Type": "application/json"}
         payload = {
-            "model": "gemini-2.5-flash",
-            "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}]
+            "systemInstruction": {"parts": [{"text": system_prompt}]},
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "safetySettings": GEMINI_SAFETY_SETTINGS
         }
         response = requests.post(url, headers=headers, json=payload).json()
-        reply_text = response.get('choices', [{}])[0].get('message', {}).get('content', "Let's just look at the stars instead... ✨").strip()
+        reply_text = response.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "Let's just look at the stars instead... ✨").strip()
         final_reply = add_emojis_balanced(reply_text)
         await query.message.edit_text(final_reply, parse_mode='Markdown')
     except Exception: await query.message.edit_text("Let's just look at the stars instead... ✨")
-
-# ---------------------------------------------------------
-# 🛠️ AI STUDIO MENU & STEP-BY-STEP LOGIC (/tool)
-# ---------------------------------------------------------
 
 async def tool_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['state'] = None
@@ -638,20 +621,15 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await update.message.reply_text("👑 **Super Admin Panel:**\nSelect an option below:", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-# 🌟 ChatLog function to forward logs to Admin
 async def ChatLog(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text, bot_reply, char_name, nsfw_status):
     user = update.effective_user
     log_msg = f"👤 User: {user.first_name} ID: `{user.id}`\n🔥 NSFW: {nsfw_status}\n💬 Msg: {user_text}\n🤖 Bot: {bot_reply}\n🎭 Char: {char_name}"
     try:
-        # Check if the user is the admin to avoid double logging
         if user.id != ADMIN_TELEGRAM_ID:
             await context.bot.send_message(ADMIN_TELEGRAM_ID, log_msg, parse_mode='Markdown')
     except Exception as e:
         logger.error(f"Error sending chat log to Admin: {e}")
 
-# ------------------------------------------------------------------
-# MAIN BUTTON HANDLER
-# ------------------------------------------------------------------
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
@@ -671,7 +649,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="open_tools")]]), parse_mode='Markdown')
         return
 
-    # STEP-BY-STEP TOOL CLICKS
     if data == "tool_txt2vid":
         await check_balance_and_proceed(query, user_id, PRICE['txt2vid'], "Text to Video", "WAITING_FOR_TXT2VID_PROMPT", "📝 **Text to Video**\n\nPlease type the description (prompt) of the video you want to generate. 🎬", context)
         return
@@ -688,7 +665,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await check_balance_and_proceed(query, user_id, PRICE['imagine'], "Imagine", "WAITING_FOR_IMAGINE_PROMPT", "✨ **AI Imagine**\n\nPlease type the description of the image you want to create! 🎨", context)
         return
 
-    # Old Callbacks
     if data == "settings_menu": return await settings_command(update, context)
     if data == "toggle_nsfw": return await toggle_nsfw_handler(update, context)
     if data == "close_settings" or data == "close_menu": return await query.message.delete()
@@ -704,7 +680,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "regen_msg": return await regenerate_message(update, context)
     if query.from_user.id != ADMIN_TELEGRAM_ID: return await query.answer()
     
-    # Admin Callbacks
     if data == 'admin_users': await user_count(update, context)
     elif data == 'admin_new_photo': await send_new_photo(update, context)
     elif data == 'admin_clearmedia': await clear_deleted_media(update, context)
@@ -780,18 +755,19 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
     threshold_time = datetime.now(timezone.utc) - timedelta(hours=24)
     users = db_collection_users.find({'last_seen': {'$lt': threshold_time}, 'notified_24h': {'$ne': True}})
     
-    url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-    headers = {"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    headers = {"Content-Type": "application/json"}
     
     for user in users:
         try:
             sys_prompt = BTS_PERSONAS.get(user.get('character', 'TaeKook'), BTS_PERSONAS["TaeKook"])
             payload = {
-                "model": "gemini-2.5-flash",
-                "messages": [{"role": "system", "content": sys_prompt}, {"role": "user", "content": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}]
+                "systemInstruction": {"parts": [{"text": sys_prompt}]},
+                "contents": [{"role": "user", "parts": [{"text": "The user hasn't messaged you in 24 hours. Send a short text to make them reply."}]}],
+                "safetySettings": GEMINI_SAFETY_SETTINGS
             }
             response = requests.post(url, headers=headers, json=payload).json()
-            reply_text = response.get('choices', [{}])[0].get('message', {}).get('content', "").strip()
+            reply_text = response.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', "").strip()
             
             if reply_text:
                 await context.bot.send_message(user['user_id'], reply_text, parse_mode='Markdown')
@@ -799,9 +775,6 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error(f"Gemini Inactivity Check Error: {e}")
 
-# ------------------------------------------------------------------
-# 🌟 MASTER MESSAGE HANDLER
-# ------------------------------------------------------------------
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_text = update.message.text 
@@ -848,7 +821,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_user_message[user_id] = user_text 
     await generate_ai_response(update, context, user_text, is_regenerate=False)
 
-# 📸 MASTER MEDIA HANDLER (Screenshots, Tool Inputs, Voice, Vision, Stickers)
 async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     state = context.user_data.get('state')
@@ -897,7 +869,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
 
         system_instruction = ""
         
-        # 🎙️ VOICE MESSAGES (Gemini Native API Transcription)
         if update.message.voice or update.message.audio:
             status_msg = await update.message.reply_text("🎧 Listening to your voice... 💜")
             file_id = update.message.voice.file_id if update.message.voice else update.message.audio.file_id
@@ -910,7 +881,8 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
 
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
             payload = {
-                "contents": [{"parts": [{"text": "Transcribe this audio exactly. Provide only the spoken text."}, {"inline_data": {"mime_type": mime_type, "data": audio_b64}}]}]
+                "contents": [{"parts": [{"text": "Transcribe this audio exactly. Provide only the spoken text."}, {"inline_data": {"mime_type": mime_type, "data": audio_b64}}]}],
+                "safetySettings": GEMINI_SAFETY_SETTINGS
             }
             response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload).json()
             
@@ -923,7 +895,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             
             await context.bot.delete_message(chat_id=update.message.chat_id, message_id=status_msg.message_id)
             
-        # 🖼️ PHOTO (Gemini Native API Vision)
         elif update.message.photo:
             status_msg = await update.message.reply_text("👀 Looking at your photo... ✨")
             file_id = update.message.photo[-1].file_id
@@ -934,7 +905,8 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
 
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
             payload = {
-                "contents": [{"parts": [{"text": f"Describe what is in this image briefly and naturally. The user's caption is: '{caption}'. Focus on the subject, emotion, and setting so a roleplay bot can react to it."}, {"inline_data": {"mime_type": "image/jpeg", "data": photo_b64}}]}]
+                "contents": [{"parts": [{"text": f"Describe what is in this image briefly and naturally. The user's caption is: '{caption}'. Focus on the subject, emotion, and setting so a roleplay bot can react to it."}, {"inline_data": {"mime_type": "image/jpeg", "data": photo_b64}}]}],
+                "safetySettings": GEMINI_SAFETY_SETTINGS
             }
             response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload).json()
             
@@ -947,7 +919,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             
             await context.bot.delete_message(chat_id=update.message.chat_id, message_id=status_msg.message_id)
         
-        # 🎥 VIDEO (Gemini Native API Vision - Limited to 15MB)
         elif update.message.video:
             caption = update.message.caption if update.message.caption else ""
             video = update.message.video
@@ -960,7 +931,8 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
 
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
                 payload = {
-                    "contents": [{"parts": [{"text": f"Describe the main action and subject in this short video. The user's caption is: '{caption}'. Just provide a brief description."}, {"inline_data": {"mime_type": mime_type, "data": video_b64}}]}]
+                    "contents": [{"parts": [{"text": f"Describe the main action and subject in this short video. The user's caption is: '{caption}'. Just provide a brief description."}, {"inline_data": {"mime_type": mime_type, "data": video_b64}}]}],
+                    "safetySettings": GEMINI_SAFETY_SETTINGS
                 }
                 response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload).json()
                 
@@ -975,7 +947,6 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             else:
                 system_instruction = f"[SYSTEM: The user sent a large VIDEO. User's caption: '{caption}'. ROLEPLAY that you see it.]"
                 
-        # 🤩 STICKERS (Extract Emoji)
         elif update.message.sticker:
             emoji = update.message.sticker.emoji or "a sticker"
             system_instruction = f"[SYSTEM: The user sent a STICKER representing this emoji: {emoji}. React to it playfully.]"
@@ -1036,18 +1007,24 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
         if len(words) < 4 and user_text.lower() not in ["hi", "hello"] and "?" not in user_text: user_text += " [SYSTEM: User sent a short text. Tease her.]"
         if not is_regenerate: chat_history[user_id].append({"role": "user", "content": user_text})
         
-        # 🌟 UPDATED: Google Gemini API Call
-        url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-        headers = {"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}
+        gemini_contents = []
+        for msg in chat_history[user_id]:
+            if msg["role"] == "system": continue
+            role = "user" if msg["role"] == "user" else "model"
+            gemini_contents.append({"role": role, "parts": [{"text": msg["content"]}]})
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+        headers = {"Content-Type": "application/json"}
         payload = {
-            "model": "gemini-2.5-flash",
-            "messages": chat_history[user_id]
+            "systemInstruction": {"parts": [{"text": system_prompt}]},
+            "contents": gemini_contents,
+            "safetySettings": GEMINI_SAFETY_SETTINGS
         }
         
         response = requests.post(url, headers=headers, json=payload).json()
         
-        if 'choices' in response:
-            reply_text = response['choices'][0]['message']['content'].strip()
+        if 'candidates' in response and len(response['candidates']) > 0:
+            reply_text = response['candidates'][0]['content']['parts'][0]['text'].strip()
         else:
             logger.error(f"Gemini API Error: {response}")
             reply_text = "I'm having a little headache... let's talk in a minute. 😵‍💫"
@@ -1112,7 +1089,7 @@ async def admin_add_credits(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except: await update.message.reply_text("Usage: `/add [UserID] [Amount]`")
 
 async def post_init(application: Application):
-    await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted & Updated!** 🚀\nUltimate AI Studio is Live with Gemini 2.5 Flash Multimodal.", parse_mode='Markdown')
+    await application.bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text="✅ **Bot Restarted!** 🚀\nGemini Safety Settings updated to BLOCK_NONE.", parse_mode='Markdown')
     commands = [
         BotCommand("start", "🔄 Restart Bot"),
         BotCommand("tool", "🛠️ AI Studio"),
@@ -1168,8 +1145,7 @@ def main():
     application.add_handler(MessageHandler(filters.User(ADMIN_TELEGRAM_ID) & ~filters.COMMAND & filters.ChatType.PRIVATE, get_media_id))
     application.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST & (filters.PHOTO | filters.VIDEO), channel_message_handler))
     
-    # 🌟 ഇവിടെ filters.Sticker കൂടെ ചേർത്തിട്ടുണ്ട് 🌟
-    application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO | filters.Sticker.ALL, handle_incoming_media), group=1)
+    application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO | filters.Sticker, handle_incoming_media), group=1)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
 
     logger.info(f"Starting webhook on port {PORT}")
