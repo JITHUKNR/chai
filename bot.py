@@ -7,7 +7,6 @@ import json
 import pytz 
 import urllib.parse 
 import base64
-from groq import Groq
 from duckduckgo_search import DDGS
 from telegram import Update, BotCommand, ReplyKeyboardRemove 
 from telegram.constants import ChatAction
@@ -16,6 +15,9 @@ from telegram.error import Forbidden, BadRequest
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup 
 from datetime import datetime, timedelta, timezone, time
 
+# ***********************************
+# WARNING: YOU MUST INSTALL pymongo AND pytz
+# ***********************************
 try:
     from pymongo import MongoClient
     from pymongo.errors import ConnectionFailure, OperationFailure
@@ -41,8 +43,7 @@ logger = logging.getLogger(__name__)
 TOKEN = os.environ.get('TOKEN') 
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 PORT = int(os.environ.get('PORT', 8443))
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') # 🌟 Gemini Key Added
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') # 🌟 Groq മാറ്റി Gemini ആക്കി
 MONGO_URI = os.environ.get('MONGO_URI') 
 
 # ✅✅✅ YOUR ID ✅✅✅
@@ -74,8 +75,12 @@ VOICE_MAP = {
     "tae": "M3gJBS8OofDJfycyA2Ip",
 }
 
+# 👇 3. വോയിസ് ചോദിക്കാൻ ഉപയോഗിക്കുന്ന വാക്കുകൾ
 VOICE_TRIGGERS = ["voice", "speak", "audio", "say something", "ശബ്ദം", "സംസാരിക്ക്", "വോയിസ്", "sound"]
 
+# ------------------------------------------------------------------
+# 🎮 TRUTH OR DARE LISTS
+# ------------------------------------------------------------------
 TRUTH_QUESTIONS = [
     "What is the first thing you noticed about me? 🙈",
     "Have you ever dreamt about us? 💭",
@@ -95,9 +100,15 @@ DARE_CHALLENGES = [
     "Change your WhatsApp status to my photo for 1 hour! 🤪"
 ]
 
+# ------------------------------------------------------------------
+# 🟣 CHARACTER SPECIFIC GIFs & VOICES
+# ------------------------------------------------------------------
 GIFS = {"RM": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jin": { "love": [], "sad": [], "funny": [], "hot": [] }, "Suga": { "love": [], "sad": [], "funny": [], "hot": [] }, "J-Hope": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jimin": { "love": [], "sad": [], "funny": [], "hot": [] }, "V": { "love": [], "sad": [], "funny": [], "hot": [] }, "Jungkook": { "love": [], "sad": [], "funny": [], "hot": [] }, "TaeKook": { "love": [], "sad": [], "funny": [], "hot": [] }}
 VOICES = {"RM": [], "Jin": [], "Suga": [], "J-Hope": [], "Jimin": [], "V": [], "Jungkook": [], "TaeKook": []}
 
+# ------------------------------------------------------------------
+# 📸 FAKE STATUS UPDATES & SCENARIOS
+# ------------------------------------------------------------------
 STATUS_SCENARIOS = [
     {"prompt": "Korean boy gym selfie mirror workout sweat realistic", "caption": "Done with workout. My muscles hurt... massage me? 🥵💪"},
     {"prompt": "Korean boy drinking coffee cafe aesthetic realistic", "caption": "Coffee tastes better when I think of you. ☕️🤎"},
@@ -136,6 +147,7 @@ BTS_PERSONAS = {
     "TaeKook": COMMON_RULES + " You are **TaeKook**. Toxic, Addictive, Possessive, Wild."
 }
 
+# 👇 വോയിസ് ജനറേറ്റ് ചെയ്യാനുള്ള ഫങ്ഷൻ
 def generate_eleven_audio(text, char_name):
     clean_name = char_name.lower() if char_name else ""
     voice_id = VOICE_MAP.get(clean_name)
@@ -160,18 +172,15 @@ db_collection_sent = None
 db_collection_cooldown = None
 DB_NAME = "Taekook_bot" 
 
-# --- Groq AI (Kept for Audio Transcription) ---
-groq_client = None
+# --- Gemini AI Setup ---
 try:
-    if GROQ_API_KEY:
-        groq_client = Groq(api_key=GROQ_API_KEY)
-        logger.info("Groq AI client loaded for Voice Transcription.")
+    if not GEMINI_API_KEY: raise ValueError("GEMINI_API_KEY is not set.")
+    chat_history = {} 
+    last_user_message = {} 
+    current_scenario = {} 
+    logger.info("Gemini AI API Key loaded successfully.")
 except Exception as e:
-    logger.error(f"Groq AI setup failed: {e}")
-
-chat_history = {} 
-last_user_message = {} 
-current_scenario = {} 
+    logger.error(f"Gemini AI setup failed: {e}")
 
 def add_emojis_balanced(text):
     if any(char in text for char in ["💜", "❤️", "🥰", "😍", "😘", "🔥", "😂"]): return text 
@@ -311,12 +320,10 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
     system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
     system_prompt += f" SCENARIO: {current_scenario[user_id]}"
     start_prompt = f"Start the roleplay based on the scenario: '{current_scenario[user_id]}'. Send the first message to the user now. Be immersive."
-    
     try:
         chat_id = update.effective_chat.id
         await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.TYPING)
         
-        # 🌟 UPDATED: Google Gemini API Call
         url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
         headers = {"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}
         payload = {
@@ -329,9 +336,7 @@ async def start_roleplay_with_plot(update: Update, context: ContextTypes.DEFAULT
         final_msg = add_emojis_balanced(msg)
         chat_history[user_id] = [{"role": "system", "content": system_prompt}, {"role": "assistant", "content": final_msg}]
         await context.bot.send_message(chat_id, f"✨ **Story Started!**\n\n{final_msg}", parse_mode='Markdown')
-    except Exception as e: 
-        logger.error(f"Gemini Plot Error: {e}")
-        await context.bot.send_message(chat_id, "Ready! You can start chatting now. 💜")
+    except Exception: await context.bot.send_message(chat_id, "Ready! You can start chatting now. 💜")
 
 async def set_persona_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -423,11 +428,8 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user_doc: selected_char = user_doc.get('character', 'TaeKook')
     system_prompt = BTS_PERSONAS.get(selected_char, BTS_PERSONAS["TaeKook"])
     await query.message.edit_text(f"✨ **{selected_activity}** with **{selected_char}**...\n\n(Creating moment... 💜)", parse_mode='Markdown')
-    
     try:
         prompt = f"The user chose {selected_activity} for a date. Describe the moment in 2 short sentences. Be immersive."
-        
-        # 🌟 UPDATED: Google Gemini API Call
         url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
         headers = {"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}
         payload = {
@@ -436,12 +438,13 @@ async def date_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         response = requests.post(url, headers=headers, json=payload).json()
         reply_text = response.get('choices', [{}])[0].get('message', {}).get('content', "Let's just look at the stars instead... ✨").strip()
-        
         final_reply = add_emojis_balanced(reply_text)
         await query.message.edit_text(final_reply, parse_mode='Markdown')
-    except Exception as e:
-        logger.error(f"Gemini Date Error: {e}")
-        await query.message.edit_text("Let's just look at the stars instead... ✨")
+    except Exception: await query.message.edit_text("Let's just look at the stars instead... ✨")
+
+# ---------------------------------------------------------
+# 🛠️ AI STUDIO MENU & STEP-BY-STEP LOGIC (/tool)
+# ---------------------------------------------------------
 
 async def tool_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['state'] = None
@@ -635,15 +638,20 @@ async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await update.message.reply_text("👑 **Super Admin Panel:**\nSelect an option below:", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
+# 🌟 ChatLog function to forward logs to Admin
 async def ChatLog(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text, bot_reply, char_name, nsfw_status):
     user = update.effective_user
     log_msg = f"👤 User: {user.first_name} ID: `{user.id}`\n🔥 NSFW: {nsfw_status}\n💬 Msg: {user_text}\n🤖 Bot: {bot_reply}\n🎭 Char: {char_name}"
     try:
+        # Check if the user is the admin to avoid double logging
         if user.id != ADMIN_TELEGRAM_ID:
             await context.bot.send_message(ADMIN_TELEGRAM_ID, log_msg, parse_mode='Markdown')
     except Exception as e:
         logger.error(f"Error sending chat log to Admin: {e}")
 
+# ------------------------------------------------------------------
+# MAIN BUTTON HANDLER
+# ------------------------------------------------------------------
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
@@ -663,6 +671,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="open_tools")]]), parse_mode='Markdown')
         return
 
+    # STEP-BY-STEP TOOL CLICKS
     if data == "tool_txt2vid":
         await check_balance_and_proceed(query, user_id, PRICE['txt2vid'], "Text to Video", "WAITING_FOR_TXT2VID_PROMPT", "📝 **Text to Video**\n\nPlease type the description (prompt) of the video you want to generate. 🎬", context)
         return
@@ -679,6 +688,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await check_balance_and_proceed(query, user_id, PRICE['imagine'], "Imagine", "WAITING_FOR_IMAGINE_PROMPT", "✨ **AI Imagine**\n\nPlease type the description of the image you want to create! 🎨", context)
         return
 
+    # Old Callbacks
     if data == "settings_menu": return await settings_command(update, context)
     if data == "toggle_nsfw": return await toggle_nsfw_handler(update, context)
     if data == "close_settings" or data == "close_menu": return await query.message.delete()
@@ -694,6 +704,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "regen_msg": return await regenerate_message(update, context)
     if query.from_user.id != ADMIN_TELEGRAM_ID: return await query.answer()
     
+    # Admin Callbacks
     if data == 'admin_users': await user_count(update, context)
     elif data == 'admin_new_photo': await send_new_photo(update, context)
     elif data == 'admin_clearmedia': await clear_deleted_media(update, context)
@@ -788,6 +799,9 @@ async def check_inactivity(context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logger.error(f"Gemini Inactivity Check Error: {e}")
 
+# ------------------------------------------------------------------
+# 🌟 MASTER MESSAGE HANDLER
+# ------------------------------------------------------------------
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     user_text = update.message.text 
@@ -834,6 +848,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last_user_message[user_id] = user_text 
     await generate_ai_response(update, context, user_text, is_regenerate=False)
 
+# 📸 MASTER MEDIA HANDLER (Screenshots, Tool Inputs, Voice Disabled)
 async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     state = context.user_data.get('state')
@@ -881,24 +896,12 @@ async def handle_incoming_media(update: Update, context: ContextTypes.DEFAULT_TY
             await context.bot.forward_message(ADMIN_TELEGRAM_ID, update.effective_chat.id, update.message.message_id)
 
         system_instruction = ""
-        # 🎙️ Voice messages (Uses Groq)
-        if update.message.voice or update.message.audio:
-            if not groq_client:
-                await update.message.reply_text("⚠️ Voice transcription is currently unavailable.")
-                return
-                
-            status_msg = await update.message.reply_text("🎧 Listening...")
-            file_id = update.message.voice.file_id if update.message.voice else update.message.audio.file_id
-            new_file = await context.bot.get_file(file_id)
-            file_path = f"voice_{user.id}.ogg"
-            await new_file.download_to_drive(file_path)
-            try:
-                with open(file_path, "rb") as file:
-                    transcription = groq_client.audio.transcriptions.create(file=(file_path, file.read()), model="whisper-large-v3", response_format="json", language="en", temperature=0.0)
-                system_instruction = f"[SYSTEM: User sent a VOICE NOTE. They said: '{transcription.text}'. Reply to them.]"
-                await context.bot.delete_message(chat_id=update.message.chat_id, message_id=status_msg.message_id)
-            except: system_instruction = "[SYSTEM: User sent a voice note but I couldn't hear it clearly.]"
         
+        # 🎙️ VOICE MESSAGES (Disabled as Groq is removed)
+        if update.message.voice or update.message.audio:
+            await update.message.reply_text("⚠️ I can't listen to voice notes right now. Please type it for me! 💜")
+            return
+            
         elif update.message.photo:
             caption = update.message.caption if update.message.caption else ""
             system_instruction = f"[SYSTEM: The user sent a PHOTO. ROLEPLAY that you see it. User's caption: '{caption}']"
@@ -916,7 +919,7 @@ async def generate_ai_response(update: Update, context: ContextTypes.DEFAULT_TYP
     if not is_regenerate: await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
 
     system_prompt, selected_char, final_name = "", "TaeKook", "TaeKook"
-    nsfw_enabled = False 
+    nsfw_enabled = False
 
     if establish_db_connection():
         user_doc = db_collection_users.find_one({'user_id': user_id})
